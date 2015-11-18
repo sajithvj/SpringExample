@@ -1,0 +1,30 @@
+package com.experion.lts.dao.hibernate;
+
+import java.util.List;
+
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+
+import com.experion.lts.dao.LoginDAO;
+import com.experion.lts.entity.Employee;
+
+public class LoginHibernateDAO extends HibernateDaoSupport implements LoginDAO 
+{
+	@SuppressWarnings("unchecked")
+	public List<Employee> searchEmployee(int employeeCode, String password) 
+	{
+
+		try 
+		{
+			List<Employee> empDetails = getHibernateTemplate().find(
+					"from Employee where empCode=? and empPassword=?",
+					employeeCode, password);
+			return empDetails;
+		} 
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+		}
+		return null;
+	}
+		
+}

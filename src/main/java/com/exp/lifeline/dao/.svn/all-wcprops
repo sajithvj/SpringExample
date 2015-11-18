@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/lts/!svn/ver/726/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/dao
+END
+LeaveDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/lts/!svn/ver/705/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/dao/LeaveDAO.java
+END
+SchedulerDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/lts/!svn/ver/705/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/dao/SchedulerDAO.java
+END
+LeaveAdminDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/lts/!svn/ver/663/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/dao/LeaveAdminDAO.java
+END
+LeaveRecommendDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/lts/!svn/ver/697/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/dao/LeaveRecommendDAO.java
+END
+LoginDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/lts/!svn/ver/130/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/dao/LoginDAO.java
+END

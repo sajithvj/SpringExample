@@ -1,0 +1,28 @@
+package com.experion.lts.service;
+
+import java.text.ParseException;
+import java.util.List;
+
+import com.experion.lts.entity.Employee;
+import com.experion.lts.entity.EmployeeLeaves;
+
+public interface LeaveRecommendService
+{
+	public void sendRecommend(int leaveId, int empCode);
+	
+	public void sendApproval(int leaveId)throws ParseException;
+	
+	public List<EmployeeLeaves> showInbox(int empCode);
+	
+	public String checkEmployeeRole(int empCode);
+	
+	public List<Employee> getEmployeeDetails();
+	
+	public void sendRejectReasonByRecommender(int leaveId, String rejectReason, int empCode) throws ParseException;
+	
+	public void sendRejectReasonByManager(int leaveId, String rejectReason, int empCode) throws ParseException;
+	
+	public List<EmployeeLeaves> getLeaveDetails(int empCode, String empName, String statusType, String leaveType, String role);
+	
+	public List<EmployeeLeaves> getRespondedLeaveDetails(int empCode, String empName, String statusType, String leaveType, String role);
+}

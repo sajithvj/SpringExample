@@ -1,0 +1,445 @@
+package com.experion.lts.service.impl;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.context.MessageSource;
+
+import com.experion.lts.dao.LeaveDAO;
+import com.experion.lts.dao.LeaveRecommendDAO;
+import com.experion.lts.entity.Employee;
+import com.experion.lts.entity.EmployeeLeaves;
+import com.experion.lts.entity.LeaveAvailability;
+import com.experion.lts.entity.LeaveTypes;
+import com.experion.lts.mvc.data.ApplyLeaveForm;
+import com.experion.lts.service.LeaveService;
+import com.experion.lts.util.LTSUtil;
+
+public class LeaveServiceImpl implements LeaveService{
+	
+	private final Log log = LogFactory.getLog(LeaveServiceImpl.class);
+	private static final int EARN_LEAVE_CODE = 3;
+	private static final String TRAINEE_DESIG = "trainee";
+	private static final int COMP_OFF_CODE = 9;
+	private static final int LOP_CODE = 10;
+	
+	private LeaveDAO leaveDAO;
+	private LeaveRecommendDAO leaveRecommendDAO;
+	
+	public LeaveRecommendDAO getLeaveRecommendDAO() {
+		return leaveRecommendDAO;
+	}
+
+	public void setLeaveRecommendDAO(LeaveRecommendDAO leaveRecommendDAO) {
+		this.leaveRecommendDAO = leaveRecommendDAO;
+	}
+
+	private MessageSource messageSource;
+	
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	public LeaveDAO getLeaveDAO() {
+		return leaveDAO;
+	}
+
+	public void setLeaveDAO(LeaveDAO leaveDAO) {
+		this.leaveDAO = leaveDAO;
+	}
+
+	public List<EmployeeLeaves> getAppliedLeaves(int empCode) {
+		List<EmployeeLeaves> empDetails=leaveDAO.getAppliedLeaves(empCode);
+		return empDetails;
+	}
+	
+	public Date getToDate(int leaveId) {
+		Date empDetails=leaveDAO.getToDate(leaveId);
+		return empDetails;
+	}
+	
+	public boolean processLeaveRequest(ApplyLeaveForm applyLeaveForm, Employee empDetails) throws ParseException
+	{
+		int flag = 0;
+		float prevYearAvailability = 0;
+		float currentYearAvailability = 0;
+		float prevYearLeaveDays = 0;
+		float nextYearAvailability = 0;
+		float nextYearLeaveDays = 0;
+		float currentYearLeaveDays = 0; 
+		float availability = 0;
+		String availResetStatus = messageSource.getMessage("lts.availabiity.reset.status", null, Locale.getDefault());
+		SimpleDateFormat sf = new SimpleDateFormat("MM/dd/yyyy");
+		Calendar dateNow = Calendar.getInstance();
+		Date currentDate = sf.parse(sf.format(dateNow.getTime()));
+		Date standardDate = sf.parse(sf.format(empDetails.getStandardDate()));
+		int monthDifference = LTSUtil.getMonthsDifference(standardDate, currentDate);
+		Date[] currentLeaveDuration = LTSUtil.getCurrentLeaveYear(empDetails);
+		Date[] prevLeaveDuration = LTSUtil.getPreviousLeaveYear(currentLeaveDuration[0], empDetails);
+		Date[] nextLeaveDuration = LTSUtil.getNextLeaveYear(currentLeaveDuration[1]);
+		String fromDate = applyLeaveForm.getFromDate();
+		String toDate = applyLeaveForm.getToDate();
+		EmployeeLeaves employeeLeaves = new EmployeeLeaves();
+		employeeLeaves.setEmpCode(empDetails.getEmpCode());
+		employeeLeaves.setLeaveType(applyLeaveForm.getLeaveType());
+		employeeLeaves.setNoOfDays(Float.valueOf(applyLeaveForm.getNoOfDays()));
+		employeeLeaves.setFromDate(sf.parse(fromDate));
+		employeeLeaves.setToDate(sf.parse(toDate));
+		employeeLeaves.setReason(applyLeaveForm.getLeaveReason());
+		employeeLeaves.setContactNumber(applyLeaveForm.getPhNumber());
+		employeeLeaves.setRecommender(applyLeaveForm.getRecommender());
+		employeeLeaves.setManager(applyLeaveForm.getManager());
+		employeeLeaves.setCancelStatus(messageSource.getMessage("lts.compoff.status.notcancelled", null, Locale.getDefault()));
+		employeeLeaves.setLeaveStatus(messageSource.getMessage("lts.leave.status.request", null, Locale.getDefault()));
+		employeeLeaves.setMailStatus(messageSource.getMessage("lts.mail.status.notsent", null, Locale.getDefault()));
+		if(applyLeaveForm.getLeaveType() == LOP_CODE)
+		{
+			leaveDAO.saveLOPRequest(employeeLeaves);
+			return true;
+		}
+		else
+		{
+			if(sf.parse(applyLeaveForm.getFromDate()).before(currentLeaveDuration[0]) && sf.parse(applyLeaveForm.getToDate()).before(currentLeaveDuration[0]))
+			{
+				availability = leaveDAO.getLeaveAvailabilty(empDetails.getEmpCode(),applyLeaveForm.getLeaveType(), prevLeaveDuration[0], prevLeaveDuration[1]);
+				flag = 0;
+			}
+			else if(sf.parse(applyLeaveForm.getFromDate()).before(currentLeaveDuration[0]) && ((sf.parse(applyLeaveForm.getToDate()).compareTo(currentLeaveDuration[0]) == 1) ||(sf.parse(applyLeaveForm.getToDate()).compareTo(currentLeaveDuration[0]) == 0)))
+			{
+				prevYearAvailability = leaveDAO.getLeaveAvailabilty(empDetails.getEmpCode(),applyLeaveForm.getLeaveType(), prevLeaveDuration[0], prevLeaveDuration[1]);
+				currentYearAvailability = leaveDAO.getLeaveAvailabilty(empDetails.getEmpCode(),applyLeaveForm.getLeaveType(), currentLeaveDuration[0], currentLeaveDuration[1]);
+				prevYearLeaveDays = (LTSUtil.getWorkingDaysBetweenDates(sf.parse(applyLeaveForm.getFromDate()), prevLeaveDuration[1])) + 1;
+				currentYearLeaveDays = Float.valueOf(applyLeaveForm.getNoOfDays()) - prevYearLeaveDays;
+				flag = 1;
+			}
+			else if(sf.parse(applyLeaveForm.getFromDate()).after(currentLeaveDuration[1]) && sf.parse(applyLeaveForm.getToDate()).after(currentLeaveDuration[1]))
+			{
+				availability = leaveDAO.getLeaveAvailabilty(empDetails.getEmpCode(),applyLeaveForm.getLeaveType(), nextLeaveDuration[0], nextLeaveDuration[1]);
+				flag = 2;
+			}
+			else if((sf.parse(applyLeaveForm.getFromDate()).compareTo(currentLeaveDuration[1]) == -1 || sf.parse(applyLeaveForm.getFromDate()).compareTo(currentLeaveDuration[1]) == 0) && sf.parse(applyLeaveForm.getToDate()).after(currentLeaveDuration[1]))
+			{
+				/*if(applyLeaveForm.getLeaveType() == EARN_LEAVE_CODE)
+				{
+					currentYearAvailability = leaveDAO.getLeaveAvailabilty(empDetails.getEmpCode(),applyLeaveForm.getLeaveType(), currentLeaveDuration[0], currentLeaveDuration[1]);
+					nextYearAvailability = leaveDAO.getLeaveAvailabilty(empDetails.getEmpCode(),applyLeaveForm.getLeaveType(),currentLeaveDuration[0], currentLeaveDuration[1]);
+					currentYearLeaveDays = Float.valueOf(applyLeaveForm.getNoOfDays());
+					nextYearLeaveDays = Float.valueOf(applyLeaveForm.getNoOfDays());
+				}
+				else
+				{*/
+				currentYearAvailability = leaveDAO.getLeaveAvailabilty(empDetails.getEmpCode(),applyLeaveForm.getLeaveType(), currentLeaveDuration[0], currentLeaveDuration[1]);
+				nextYearAvailability = leaveDAO.getLeaveAvailabilty(empDetails.getEmpCode(),applyLeaveForm.getLeaveType(), nextLeaveDuration[0], nextLeaveDuration[1]);
+				currentYearLeaveDays = (LTSUtil.getWorkingDaysBetweenDates(sf.parse(applyLeaveForm.getFromDate()), currentLeaveDuration[1])) + 1;
+				nextYearLeaveDays = Float.valueOf(applyLeaveForm.getNoOfDays()) - currentYearLeaveDays;
+				flag = 3;
+			}
+			else
+			{
+				availability = leaveDAO.getLeaveAvailabilty(empDetails.getEmpCode(),applyLeaveForm.getLeaveType(), currentLeaveDuration[0], currentLeaveDuration[1]);
+				if((applyLeaveForm.getLeaveType() == EARN_LEAVE_CODE) && (((monthDifference + 1) % 6) == 0) && (((monthDifference + 1) % 12) != 0) && !empDetails.getEmpDesignation().toLowerCase().contains(TRAINEE_DESIG) || (empDetails.getEmpDesignation().toLowerCase().contains(TRAINEE_DESIG) && empDetails.getResetStatus().equalsIgnoreCase(availResetStatus)))
+				{
+					Calendar calDate = Calendar.getInstance();
+					calDate.setTime(standardDate);
+					calDate.add(Calendar.MONTH, (monthDifference + 1));
+					Date checkDate = sf.parse(sf.format(calDate.getTime()));
+					if(sf.parse(applyLeaveForm.getFromDate()).before(checkDate)) 
+					{
+						availability = availability - 4;
+					}
+				}
+				flag = 4;
+			}
+			
+			if(flag == 0 && availability >= Float.valueOf(applyLeaveForm.getNoOfDays()))
+			{
+				leaveDAO.saveLeaveRequest(employeeLeaves, empDetails, prevLeaveDuration);
+				return true;
+			}
+			else if(flag == 1 && prevYearAvailability >= prevYearLeaveDays && currentYearAvailability >= currentYearLeaveDays)
+			{
+				leaveDAO.saveRequest(employeeLeaves, empDetails, currentLeaveDuration, prevLeaveDuration, prevYearLeaveDays, currentYearLeaveDays);
+				return true;
+			}
+			else if(flag == 2 && availability >= Float.valueOf(applyLeaveForm.getNoOfDays()))
+			{
+				leaveDAO.saveLeaveRequest(employeeLeaves, empDetails, nextLeaveDuration);
+				return true;
+			}
+			else if(flag == 3 && nextYearAvailability >= nextYearLeaveDays && currentYearAvailability >= currentYearLeaveDays)
+			{
+				leaveDAO.saveRequest(employeeLeaves, empDetails, currentLeaveDuration, nextLeaveDuration, nextYearLeaveDays, currentYearLeaveDays);
+				return true;
+			}
+			else if(flag == 4 && availability >= Float.valueOf(applyLeaveForm.getNoOfDays()))
+			{
+				leaveDAO.saveLeaveRequest(employeeLeaves, empDetails, currentLeaveDuration);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+	public List<Employee> getRecommenders(int empCode)
+	{
+		return leaveDAO.getRecommenders(empCode);
+	}
+	public List<Employee> getManagers(int empCode)
+	{
+		return leaveDAO.getManagers(empCode);
+	}
+	public List<LeaveTypes> getLeaveTypes()
+	{
+		return leaveDAO.getLeaveTypes();
+	}
+	
+	public List<LeaveAvailability> getAvailableLeaves(Employee emplDetails) throws ParseException {
+		log.info("Entered getAvailableLeaves()...");
+		Date[] leaveDurationArray = LTSUtil.getCurrentLeaveYear(emplDetails);
+		List<LeaveAvailability> empDetails = leaveDAO.getAvailableLeaves(emplDetails.getEmpCode(), leaveDurationArray[0], leaveDurationArray[1]);
+		return empDetails;
+	}
+	
+	public List<LeaveAvailability> getPreviousAvailableLeaves(Employee emplDetails) throws ParseException{
+		String resetStatus = messageSource.getMessage("lts.availabiity.reset.status", null, Locale.getDefault());
+		SimpleDateFormat sf = new SimpleDateFormat("MM/dd/yyyy");
+		  Date[] leaveDurationArray = LTSUtil.getCurrentLeaveYear(emplDetails);
+		  Calendar calDate = Calendar.getInstance();
+		  calDate.setTime(leaveDurationArray[0]);
+		  calDate.add(Calendar.DATE, -1);
+		  Date previousLeaveYearTo = sf.parse(sf.format(calDate.getTime()));
+		  Calendar dateNow = Calendar.getInstance();
+		  Date currentDate = dateNow.getTime();
+		  int yearDifference = LTSUtil.getYearDifference(emplDetails.getStandardDate(), currentDate);
+		  if(emplDetails.getResetStatus().equalsIgnoreCase(resetStatus) && yearDifference == 0)
+		  {
+			  calDate.add(Calendar.MONTH, -(emplDetails.getTrainingPeriod()));
+		  }
+		  else
+		  {
+			  calDate.add(Calendar.YEAR, -1);
+		  }
+		  calDate.add(Calendar.DATE, 1);
+		  Date previousLeaveYearFrom = sf.parse(sf.format(calDate.getTime()));
+		  List<LeaveAvailability> empPreviousDetails = leaveDAO.getAvailableLeaves(emplDetails.getEmpCode(), previousLeaveYearFrom, previousLeaveYearTo);
+		  return empPreviousDetails;
+	}
+	
+	
+	public void cancelLeave(int leaveId, Employee emplDetails) throws ParseException {
+		float prevYearLeaveDays = 0;
+		float currentYearLeaveDays = 0; 
+		float nextYearLeaveDays = 0;
+		Date[] currentLeaveDuration = LTSUtil.getCurrentLeaveYear(emplDetails);
+		Date[] prevLeaveDuration = LTSUtil.getPreviousLeaveYear(currentLeaveDuration[0], emplDetails);
+		Date[] nextLeaveDuration = LTSUtil.getNextLeaveYear(currentLeaveDuration[1]);
+		List<EmployeeLeaves> leaveList = leaveRecommendDAO.getDetails(leaveId);
+		if(leaveList.get(0).getFromDate().before(currentLeaveDuration[0]) && leaveList.get(0).getToDate().before(currentLeaveDuration[0]))
+		{
+			leaveDAO.cancelLeave(leaveId, prevLeaveDuration[0], prevLeaveDuration[1]);
+		}
+		else if(leaveList.get(0).getFromDate().before(currentLeaveDuration[0]) && ((leaveList.get(0).getToDate().compareTo(currentLeaveDuration[0]) == 1) || (leaveList.get(0).getToDate().compareTo(currentLeaveDuration[0]) == 0)))
+		{
+			 prevYearLeaveDays = (LTSUtil.getWorkingDaysBetweenDates(leaveList.get(0).getFromDate(), prevLeaveDuration[1])) + 1;
+			 currentYearLeaveDays = Float.valueOf(leaveList.get(0).getNoOfDays()) - prevYearLeaveDays;
+			 leaveDAO.cancelCombinedLeave(leaveId, prevLeaveDuration, currentLeaveDuration, prevYearLeaveDays, currentYearLeaveDays);
+		}
+		else if(leaveList.get(0).getFromDate().after(currentLeaveDuration[1]) && leaveList.get(0).getToDate().after(currentLeaveDuration[1]))
+		{
+			leaveDAO.cancelLeave(leaveId, nextLeaveDuration[0], nextLeaveDuration[1]);
+		}
+		else if((leaveList.get(0).getFromDate().compareTo(currentLeaveDuration[1]) == -1 || leaveList.get(0).getFromDate().compareTo(currentLeaveDuration[1]) == 0) && leaveList.get(0).getToDate().after(currentLeaveDuration[1]))
+		{
+			currentYearLeaveDays = (LTSUtil.getWorkingDaysBetweenDates(leaveList.get(0).getFromDate(), currentLeaveDuration[1])) + 1;
+			nextYearLeaveDays = Float.valueOf(leaveList.get(0).getNoOfDays()) - currentYearLeaveDays;
+			leaveDAO.cancelCombinedLeave(leaveId, nextLeaveDuration, currentLeaveDuration, nextYearLeaveDays, currentYearLeaveDays);
+		}
+		else
+		{
+			leaveDAO.cancelLeave(leaveId, currentLeaveDuration[0], currentLeaveDuration[1]);
+		}
+	}
+
+	public List<EmployeeLeaves> getCompOffRequests(int empCode)
+	{
+		
+		return leaveDAO.getCompOffRequests(empCode);
+	}
+
+	public void cancelCompOffRequest(int compOffId, Employee emplDetails) throws ParseException
+	{
+		Date[] leaveDurationArray = LTSUtil.getCurrentLeaveYear(emplDetails);
+		leaveDAO.saveCompOffCancelStatus(compOffId, leaveDurationArray[0], leaveDurationArray[1]);
+	}
+
+	public void processCompOffRequest(ApplyLeaveForm applyLeaveForm, int empCode) throws ParseException 
+	{
+		String fromDate = applyLeaveForm.getFromDate();
+		String toDate = applyLeaveForm.getToDate();
+		SimpleDateFormat sf = new SimpleDateFormat("MM/dd/yyyy");
+		EmployeeLeaves employeeLeaves = new EmployeeLeaves();
+		employeeLeaves.setEmpCode(empCode);
+		employeeLeaves.setLeaveType(COMP_OFF_CODE);
+		employeeLeaves.setNoOfDays(Float.valueOf(applyLeaveForm.getNoOfDays()));
+		employeeLeaves.setFromDate(sf.parse(fromDate));
+		employeeLeaves.setToDate(sf.parse(toDate));
+		employeeLeaves.setReason(applyLeaveForm.getRemarks());
+		employeeLeaves.setContactNumber(applyLeaveForm.getPhNumber());
+		employeeLeaves.setRecommender(applyLeaveForm.getRecommender());
+		employeeLeaves.setManager(applyLeaveForm.getManager());
+		employeeLeaves.setCancelStatus(messageSource.getMessage("lts.compoff.status.notcancelled", null, Locale.getDefault()));
+		employeeLeaves.setLeaveStatus(messageSource.getMessage("lts.compoff.status.request", null, Locale.getDefault()));
+		employeeLeaves.setMailStatus(messageSource.getMessage("lts.mail.status.notsent", null, Locale.getDefault()));
+		leaveDAO.saveCompOffrequest(employeeLeaves);
+	}
+
+	public List<LeaveTypes> getLeaveTypesByGender(int empCode) 
+	{
+		return leaveDAO.getLeaveTypesByGender(empCode);
+	}
+
+	public String getLeaveStatus(int leaveId) 
+	{
+		return leaveDAO.getLeaveStatus(leaveId);
+	}
+	
+	public String getCancelStatus(int leaveId) 
+	{
+		return leaveDAO.getCancelStatus(leaveId);
+	}
+
+	public String[] getLeaveYears(Employee emplDetails) throws ParseException {
+		SimpleDateFormat sf = new SimpleDateFormat("dd-MMM-yyyy");
+		SimpleDateFormat sf1 = new SimpleDateFormat("MM/dd/yyyy");
+		String[] yearArray;
+		String resetStatus = messageSource.getMessage("lts.availabiity.reset.status", null, Locale.getDefault());
+		Date standardDate = sf1.parse(sf1.format(emplDetails.getStandardDate()));
+		Calendar dateNow = Calendar.getInstance();
+		Date currentDate = sf1.parse(sf1.format(dateNow.getTime()));
+		int yearDifference = LTSUtil.getYearDifference(standardDate, currentDate);
+		yearDifference = yearDifference+1;
+		if(emplDetails.getResetStatus().equalsIgnoreCase(resetStatus))
+		{
+			yearArray = new String[yearDifference + 1];
+			Calendar fromDate = Calendar.getInstance();
+			fromDate.setTime(emplDetails.getJoiningDate());
+			String str = sf.format(fromDate.getTime());
+			fromDate.add(Calendar.MONTH, emplDetails.getTrainingPeriod());
+			fromDate.add(Calendar.DATE, -1);
+			str +="---"+ sf.format(fromDate.getTime());
+			yearArray[yearDifference] = str;
+		}
+		else
+		{
+			yearArray = new String[yearDifference];
+		}
+		Calendar fromDate = Calendar.getInstance();
+		fromDate.setTime(standardDate);
+		fromDate.add(Calendar.DATE, -1);
+		for(int i=yearDifference-1; i>=0; i--)
+		{
+			fromDate.add(Calendar.DATE, 1);
+			String str = sf.format(fromDate.getTime());
+			fromDate.add(Calendar.YEAR, 1);
+			fromDate.add(Calendar.DATE, -1);
+			str +="---"+ sf.format(fromDate.getTime());
+			yearArray[i] = str;
+		}
+		return yearArray;
+	}
+	public String[] getPreviousLeaveYears(Employee empDetails) {
+		String[] yearArray;
+		String resetStatus = messageSource.getMessage("lts.availabiity.reset.status", null, Locale.getDefault());
+		SimpleDateFormat sf = new SimpleDateFormat("dd-MMM-yyyy");
+		Date standardDate = empDetails.getStandardDate();
+		Calendar dateNow = Calendar.getInstance();
+		Date currentDate = dateNow.getTime();
+		int yearDifference = LTSUtil.getYearDifference(standardDate, currentDate);
+		yearDifference = yearDifference+1;
+		if(empDetails.getResetStatus().equalsIgnoreCase(resetStatus))
+		{
+			yearArray= new String[yearDifference];
+			Calendar fromDate = Calendar.getInstance();
+			fromDate.setTime(empDetails.getJoiningDate());
+			String str = sf.format(fromDate.getTime());
+			fromDate.add(Calendar.MONTH, empDetails.getTrainingPeriod());
+			fromDate.add(Calendar.DATE, -1);
+			str +="---"+ sf.format(fromDate.getTime());
+			yearArray[yearDifference-1] = str;
+		}
+		else
+		{
+			yearArray= new String[yearDifference-1];
+		}
+		Calendar fromDate = Calendar.getInstance();
+		fromDate.setTime(standardDate);
+		fromDate.add(Calendar.DATE, -1);
+		for(int i=yearDifference-2; i>=0; i--)
+		{
+			fromDate.add(Calendar.DATE, 1);
+			String str = sf.format(fromDate.getTime());
+			fromDate.add(Calendar.YEAR, 1);
+			fromDate.add(Calendar.DATE, -1);
+			str +="---"+ sf.format(fromDate.getTime());
+			yearArray[i] = str;
+		}
+		return yearArray;
+	}
+
+	public List<EmployeeLeaves> processSearchRequest(String leaveYearDuration,int empCode) throws ParseException 
+	{
+		String[] leaveYearArray = leaveYearDuration.split("---");
+		SimpleDateFormat sf1 = new SimpleDateFormat("MM/dd/yyyy");
+		SimpleDateFormat sf = new SimpleDateFormat("dd-MMM-yyyy");
+		Date leaveYearFrom = sf1.parse(sf1.format(sf.parse(leaveYearArray[0])));
+		Date leaveYearTo =  sf1.parse(sf1.format(sf.parse(leaveYearArray[1])));
+		return leaveDAO.getSearchResults(leaveYearFrom,leaveYearTo,empCode);
+		
+	}
+
+	public boolean getSameDatesStatus(int flag, int empCode, Date fromDate, Date toDate) 
+	{
+		return leaveDAO.getSameDatesStatus(flag, empCode, fromDate, toDate);
+	}
+
+	public List<LeaveAvailability> getPreviousAvailability(int empCode, String leaveYear) throws ParseException 
+	{
+		String[] leaveYearArray = leaveYear.split("---");
+		SimpleDateFormat sf1 = new SimpleDateFormat("MM/dd/yyyy");
+		SimpleDateFormat sf = new SimpleDateFormat("dd-MMM-yyyy");
+		Date leaveYearFrom = sf1.parse(sf1.format(sf.parse(leaveYearArray[0])));
+		Date leaveYearTo =  sf1.parse(sf1.format(sf.parse(leaveYearArray[1])));
+		return leaveDAO.getPreviousAvailability(empCode, leaveYearFrom, leaveYearTo);
+	}
+
+	public void changePassword(int empCode, String password) {
+		leaveDAO.changePassword(empCode, password);
+	}
+
+	public long getEducationLeaveCount(Employee empDetails, Date leaveYearFrom, Date leaveYearTo) 
+	{
+		return leaveDAO.getEducationLeaveCount(empDetails, leaveYearFrom, leaveYearTo);
+	}
+
+	public List<EmployeeLeaves> getEducationLeaveDetails(Employee empDetails)
+	{
+		return leaveDAO.getEducationLeaveDetails(empDetails);
+	}
+
+	public List<EmployeeLeaves> getCompOffDetails(int compOffId) 
+	{
+		return leaveDAO.getCompOffDetails(compOffId);
+	}
+}

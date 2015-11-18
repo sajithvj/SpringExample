@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/lts/!svn/ver/688/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/entity
+END
+Employee.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/lts/!svn/ver/642/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/entity/Employee.java
+END
+EmployeeLeaves.java
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/lts/!svn/ver/688/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/entity/EmployeeLeaves.java
+END
+LeaveTypes.java
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/lts/!svn/ver/274/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/entity/LeaveTypes.java
+END
+CompOffRequest.java
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/lts/!svn/ver/186/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/entity/CompOffRequest.java
+END
+EmployeeDesignation.java
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/lts/!svn/ver/569/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/entity/EmployeeDesignation.java
+END
+LeaveAvailability.java
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/lts/!svn/ver/493/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/entity/LeaveAvailability.java
+END
+Holidays.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/lts/!svn/ver/539/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/entity/Holidays.java
+END

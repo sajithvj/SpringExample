@@ -1,0 +1,141 @@
+package com.experion.lts.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "LTS_COMP_OFF_REQUEST")
+public class CompOffRequest 
+{
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO, generator = "LTS_COMP_OFF_REQUEST")
+	@SequenceGenerator(name = "LTS_COMP_OFF_REQUEST", sequenceName = "LTS_COMP_OFF_REQ_ID_SEQ")
+	@Column(name = "EMP_COMP_OFF_REQUEST_ID")
+	private Integer compOffId;
+	
+	@Column(name = "EMP_CODE")
+	private Integer empCode;
+	
+	@Column(name = "EMP_WORKED_ON_FM_DT")
+	private Date fromDate;
+	
+	@Column(name = "EMP_WORKED_ON_TO_DT")
+	private Date toDate;
+	
+	@Column(name = "EMP_WORKED_DAYS")
+	private Integer noOfDays;
+	
+	@Column(name = "EMP_RECOMMENDER")
+	private Integer recommender;
+	
+	@Column(name = "EMP_MANAGER")
+	private Integer manager;
+	
+	@Column(name = "EMP_REMARK")
+	private String empRemarks;
+
+	@Column(name = "EMP_REC_REJECT_REASON")
+	private String recRejectReason;
+	
+	@Column(name = "EMP_MGR_REJECT_REASON")
+	private String mgrRejectReason;
+	
+	@Column(name = "EMP_COMP_OFF_STATUS")
+	private String compOffStatus;
+
+	public String getEmpRemarks() {
+		return empRemarks;
+	}
+
+	public void setEmpRemarks(String empRemarks) {
+		this.empRemarks = empRemarks;
+	}
+
+	public Integer getCompOffId() {
+		return compOffId;
+	}
+
+	public void setCompOffId(Integer compOffId) {
+		this.compOffId = compOffId;
+	}
+
+	public Integer getEmpCode() {
+		return empCode;
+	}
+
+	public void setEmpCode(Integer empCode) {
+		this.empCode = empCode;
+	}
+
+	public Date getFromDate() {
+		return fromDate;
+	}
+
+	public void setFromDate(Date fromDate) {
+		this.fromDate = fromDate;
+	}
+
+	public Date getToDate() {
+		return toDate;
+	}
+
+	public void setToDate(Date toDate) {
+		this.toDate = toDate;
+	}
+
+	public Integer getNoOfDays() {
+		return noOfDays;
+	}
+
+	public void setNoOfDays(Integer noOfDays) {
+		this.noOfDays = noOfDays;
+	}
+
+	public Integer getRecommender() {
+		return recommender;
+	}
+
+	public void setRecommender(Integer recommender) {
+		this.recommender = recommender;
+	}
+
+	public Integer getManager() {
+		return manager;
+	}
+
+	public void setManager(Integer manager) {
+		this.manager = manager;
+	}
+
+	public String getRecRejectReason() {
+		return recRejectReason;
+	}
+
+	public void setRecRejectReason(String recRejectReason) {
+		this.recRejectReason = recRejectReason;
+	}
+
+	public String getMgrRejectReason() {
+		return mgrRejectReason;
+	}
+
+	public void setMgrRejectReason(String mgrRejectReason) {
+		this.mgrRejectReason = mgrRejectReason;
+	}
+
+	public String getCompOffStatus() {
+		return compOffStatus;
+	}
+
+	public void setCompOffStatus(String compOffStatus) {
+		this.compOffStatus = compOffStatus;
+	}
+	
+}

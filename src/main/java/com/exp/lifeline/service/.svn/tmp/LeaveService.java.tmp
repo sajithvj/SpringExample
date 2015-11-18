@@ -1,0 +1,52 @@
+package com.experion.lts.service;
+
+import java.text.ParseException;
+import java.util.List;
+
+import com.experion.lts.entity.Employee;
+import com.experion.lts.entity.EmployeeLeaves;
+import com.experion.lts.entity.LeaveAvailability;
+import com.experion.lts.entity.LeaveTypes;
+import com.experion.lts.mvc.data.ApplyLeaveForm;
+
+public interface LeaveService {
+	
+	public List<EmployeeLeaves> getAppliedLeaves(int empCode);
+	
+	public  boolean processLeaveRequest(ApplyLeaveForm applyleaveForm, int empCode) throws ParseException;
+	
+	public List<Employee> getRecommenders();
+	
+	public List<Employee> getManagers();
+	
+	public List<LeaveTypes> getLeaveTypesByGender(int empCode);
+	
+	public List<LeaveTypes> getLeaveTypes();
+	
+	public List<LeaveAvailability> getAvailableLeaves(int empCode) throws ParseException;
+	
+<<<<<<< .mine
+	public void cancelLeave(int leaveId, int empCode)  throws ParseException;
+=======
+	public void cancelLeave(int leaveId, int empCode);
+>>>>>>> .r423
+	
+	public List<EmployeeLeaves> getCompOffRequests(int empCode);
+	
+	public void cancelCompOffRequest(int compOffId, int empCode);
+	
+	public void processCompOffRequest(ApplyLeaveForm applyLeaveForm, int empCode) throws ParseException;
+	
+	public String getLeaveStatus(int leaveId);
+	
+	public String getCancelStatus(int leaveId);
+
+	public String[] getLeaveYears(int empCode);
+	
+	public List<EmployeeLeaves> processSearchRequest(String leaveYearDuration,int empCode)throws ParseException;
+	
+	/*public List<EmployeeLeaves> updateLeaveRequest(int leaveId);
+	
+	public List<EmployeeLeaves> updateCompOffRequest(int leaveId);*/
+
+}

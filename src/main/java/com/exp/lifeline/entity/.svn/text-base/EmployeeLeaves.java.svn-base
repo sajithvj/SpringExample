@@ -1,0 +1,189 @@
+package com.experion.lts.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "LTS_EMP_LEAVES")
+public class EmployeeLeaves 
+{
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO, generator = "LTS_EMP_LEAVES")
+	@SequenceGenerator(name = "LTS_EMP_LEAVES", sequenceName = "LTS_LEAVE_ID_SEQ")
+	@Column(name = "EMP_LEAVE_ID")
+	private Integer leaveId;
+	
+	@Column(name = "EMP_CODE")
+	private Integer empCode;
+	
+	@Column(name = "EMP_LEAVE_TYPE_ID")
+	private Integer leaveType;
+	
+	@Column(name = "EMP_NO_OF_DAYS")
+	private Float noOfDays;
+	
+	@Column(name = "EMP_FROM_DT")
+	private Date fromDate;
+	
+	@Column(name = "EMP_TO_DT")
+	private Date toDate;
+	
+	@Column(name = "EMP_REASON")
+	private String reason;
+	
+	@Column(name = "EMP_CONTACT")
+	private String contactNumber;
+	
+	@Column(name = "EMP_RECOMMENDER")
+	private Integer recommender;
+	
+	@Column(name = "EMP_MANAGER")
+	private Integer manager;
+	
+	@Column(name = "EMP_LEAVE_STATUS")
+	private String leaveStatus;
+	
+	@Column(name = "EMP_REC_REJECT_REASON")
+	private String recRejectReason;
+	
+	@Column(name = "EMP_MGR_REJECT_REASON")
+	private String mgrRejectReason;
+	
+	@Column(name = "EMP_CANCEL_STATUS")
+	private String cancelStatus;
+	
+	@Column(name = "EMP_MAIL_STATUS")
+	private String mailStatus;
+
+	/*@OneToOne(cascade = CascadeType.ALL)
+	@JoinColumn(name="EMP_CODE")
+	private Employee employee;
+*/
+	public String getCancelStatus() {
+		return cancelStatus;
+	}
+
+	public void setCancelStatus(String cancelStatus) {
+		this.cancelStatus = cancelStatus;
+	}
+
+	public Integer getLeaveId() {
+		return leaveId;
+	}
+
+	public void setLeaveId(Integer leaveId) {
+		this.leaveId = leaveId;
+	}
+
+	public Integer getEmpCode() {
+		return empCode;
+	}
+
+	public void setEmpCode(Integer empCode) {
+		this.empCode = empCode;
+	}
+
+	public Integer getLeaveType() {
+		return leaveType;
+	}
+
+	public void setLeaveType(Integer leaveType) {
+		this.leaveType = leaveType;
+	}
+
+	public Float getNoOfDays() {
+		return noOfDays;
+	}
+
+	public void setNoOfDays(Float noOfDays) {
+		this.noOfDays = noOfDays;
+	}
+
+	public Date getFromDate() {
+		return fromDate;
+	}
+
+	public void setFromDate(Date fromDate) {
+		this.fromDate = fromDate;
+	}
+
+	public Date getToDate() {
+		return toDate;
+	}
+
+	public void setToDate(Date toDate) {
+		this.toDate = toDate;
+	}
+
+	public String getReason() {
+		return reason;
+	}
+
+	public void setReason(String reason) {
+		this.reason = reason;
+	}
+
+	public String getContactNumber() {
+		return contactNumber;
+	}
+
+	public void setContactNumber(String contactNumber) {
+		this.contactNumber = contactNumber;
+	}
+
+	public Integer getRecommender() {
+		return recommender;
+	}
+
+	public void setRecommender(Integer recommender) {
+		this.recommender = recommender;
+	}
+
+	public Integer getManager() {
+		return manager;
+	}
+
+	public void setManager(Integer manager) {
+		this.manager = manager;
+	}
+
+	public String getLeaveStatus() {
+		return leaveStatus;
+	}
+
+	public void setLeaveStatus(String leaveStatus) {
+		this.leaveStatus = leaveStatus;
+	}
+
+	public String getRecRejectReason() {
+		return recRejectReason;
+	}
+
+	public void setRecRejectReason(String recRejectReason) {
+		this.recRejectReason = recRejectReason;
+	}
+
+	public String getMgrRejectReason() {
+		return mgrRejectReason;
+	}
+
+	public void setMgrRejectReason(String mgrRejectReason) {
+		this.mgrRejectReason = mgrRejectReason;
+	}
+
+	public String getMailStatus() {
+		return mailStatus;
+	}
+
+	public void setMailStatus(String mailStatus) {
+		this.mailStatus = mailStatus;
+	}
+
+}

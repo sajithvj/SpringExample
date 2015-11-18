@@ -1,0 +1,24 @@
+package com.experion.lts.dao;
+
+import java.util.Date;
+import java.util.List;
+
+import com.experion.lts.entity.Employee;
+import com.experion.lts.view.EmailView;
+
+public interface SchedulerDAO
+{
+	public List<Employee> getEmployeeDetails();
+	
+	public void resetAvailability(Employee employeeDetails, Date leaveYearFrom, Date leaveYearTo, int yearDifference);
+	
+	public List<EmailView> getLeaveDetails();
+	
+	public void updateMailStatus(int leaveId, String mailStatus);
+
+	public void updateEarnedLeave(Employee employeeDetails, Date[] leaveYear, int flag);
+
+	public void insertEarnedLeave(Employee empDetails, Date leaveYearFrom, Date leaveYearTo);
+	
+	public void setEarnLeaveCountToZero(Employee empDetails, Date[] prevLeaveYear);
+}

@@ -1,0 +1,178 @@
+package com.experion.lts.dao.hibernate;
+
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.context.MessageSource;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+
+import com.experion.lts.dao.LeaveDAO;
+import com.experion.lts.entity.CompOffRequest;
+import com.experion.lts.entity.Employee;
+import com.experion.lts.entity.EmployeeLeaves;
+import com.experion.lts.entity.LeaveAvailability;
+import com.experion.lts.entity.LeaveTypes;
+
+public class LeaveHibernateDAO extends HibernateDaoSupport implements LeaveDAO
+{
+	private MessageSource messageSource;
+	
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+	
+
+	@SuppressWarnings("unchecked")
+	public List<EmployeeLeaves> searchEmployee(int empCode)
+	{
+		try
+		{
+			List<EmployeeLeaves> empDetails=getHibernateTemplate().find("from EmployeeLeaves where empCode=?",empCode);
+			System.out.println(empDetails);
+		    return empDetails;
+		}
+		catch(Exception e)
+		{
+			System.out.println(e);
+			return null;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public int getLeaveAvailabilty(int empCode, int leaveType)
+	{
+		try
+		{
+			List<Integer> availability = getHibernateTemplate().find("select availability from LeaveAvailability where empCode = ? and typeId = ?",empCode,leaveType);
+			return availability.get(0);
+		}
+		catch(Exception e)
+		{
+			System.out.println(e);
+			return 0;
+		}
+	}
+	public void saveLeaveRequest(EmployeeLeaves employeeLeaves)
+	{
+		try
+		{
+			getHibernateTemplate().save(employeeLeaves);
+		}
+		catch(Exception e)
+		{
+			System.out.println(e);
+		}
+	}
+	@SuppressWarnings("unchecked")
+	public List<Employee> getRecommenders()
+	{
+		try
+		{
+			List<Employee> recList = getHibernateTemplate().find("from Employee where empRole = 'r'");
+			return recList;
+		}
+		catch(Exception e)
+		{
+			System.out.println(e);
+			return null;
+		}
+	}
+	@SuppressWarnings("unchecked")
+	public List<Employee> getManagers()
+	{
+		try
+		{
+			List<Employee> mgrList = getHibernateTemplate().find("from Employee where empRole = 'm'");
+			return mgrList;
+		}
+		catch(Exception e)
+		{
+			System.out.println(e);
+			return null;
+		}
+	}
+	public List<LeaveTypes> getLeaveTypes()
+	{
+		try
+		{
+			@SuppressWarnings("unchecked")
+			List<LeaveTypes> leaveTypes = getHibernateTemplate().find("from LeaveTypes");
+			return leaveTypes;
+		}
+		catch(Exception e)
+		{
+			System.out.println(e);
+			return null;
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<LeaveAvailability> getAvailableLeaves(int empCode)
+	{
+		try
+		{
+			List<LeaveAvailability> availableLeaveDetails = getHibernateTemplate().find("from LeaveAvailability where empCode=?",empCode);
+			return availableLeaveDetails;
+		}
+		catch(Exception e)
+		{
+			System.out.println(e);
+			return null;
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public void cancelLeave(int leaveId)
+	{
+		try
+		{
+			//List<EmployeeLeaves> test = getHibernateTemplate().find("from EmployeeLeaves where leaveId = ?",leaveId);
+			//System.out.println("test"+test.get(0).getReason());
+			
+			List<EmployeeLeaves> emp = getHibernateTemplate().find("from EmployeeLeaves where leaveId = ?",leaveId);
+			String leaveStatus = emp.get(0).getLeaveStatus();
+			int empId = emp.get(0).getEmpCode();
+			int typeId = emp.get(0).getLeaveType();
+			List<LeaveAvailability> availableLeave = getHibernateTemplate().find("from LeaveAvailability where typeId = ? and empCode = ?", typeId, empId);
+			int availability = availableLeave.get(0).getAvailability();
+			String leave = messageSource.getMessage("lts.mgr.status.approve",null,Locale.getDefault());
+			if(leaveStatus.equals(leave))
+			{
+				//getHibernateTemplate().delete(emp.get(0));
+				getHibernateTemplate().bulkUpdate("update LeaveAvailability set availability = (availability + ?) where empCode = ? and typeId = ?", availability, empId, typeId);
+				leaveStatus = messageSource.getMessage("lts.leave.status.cancel", null, Locale.getDefault());
+				getHibernateTemplate().bulkUpdate("update EmployeeLeaves set  leaveStatus = ? where leaveId = ?", leaveStatus,leaveId);
+			}
+			else
+			{
+				leaveStatus = messageSource.getMessage("lts.leave.status.cancel", null, Locale.getDefault());
+				getHibernateTemplate().bulkUpdate("update EmployeeLeaves set  leaveStatus = ? where leaveId = ?", leaveStatus,leaveId);
+				//getHibernateTemplate().delete(emp.get(0));
+			}
+			
+		}
+		catch(Exception e)
+		{
+			System.out.println(e);
+			
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<CompOffRequest> getCompOffRequests(int empCode)
+	{
+		try
+		{
+			return getHibernateTemplate().find("from CompOffRequest where empCode = ?", empCode);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
+}

@@ -1,0 +1,12 @@
+package com.experion.lts.dao;
+
+import java.util.List;
+
+import com.experion.lts.entity.Employee;
+
+
+public interface LoginDAO {
+	
+	public List<Employee> searchEmployee(int employeeCode,String password);
+	
+}

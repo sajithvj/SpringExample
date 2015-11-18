@@ -1,0 +1,10 @@
+package com.experion.lts.service;
+
+import java.text.ParseException;
+
+public interface SchedulerService
+{
+	public void  resetLeave() throws ParseException;
+	
+	public void sendMail();
+}

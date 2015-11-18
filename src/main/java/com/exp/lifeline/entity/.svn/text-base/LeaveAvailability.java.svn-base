@@ -1,0 +1,109 @@
+package com.experion.lts.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "LTS_LEAVE_AVAILABILITY")
+public class LeaveAvailability 
+{
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO, generator = "LTS_AVAIL_LEAVES")
+	@SequenceGenerator(name = "LTS_AVAIL_LEAVES", sequenceName = "LTS_AVAIL_LEAVE_ID_SEQ")
+	@Column(name = "EMP_AVAILABILITY_ID")
+	private Integer availabilityId;
+	
+	@Column(name = "EMP_CODE")
+	private Integer empCode;
+	
+	@Column(name = "LEAVE_TYPE_ID")
+	private Integer typeId;
+	
+	@Column(name = "AVAILABILITY")
+	private Float availability;
+	
+	@Column(name = "LEAVE_YEAR_FROM")
+	private Date leaveYearFrom;
+	
+	@Column(name = "LEAVE_YEAR_TO")
+	private Date leaveYearTo;
+	
+	@Column(name = "ELIGIBLE_LEAVES")
+	private Float eligibleLeaves;
+	
+	@Column(name = "LEAVES_TAKEN")
+	private Float leavesTaken;
+	
+	public Integer getEmpCode() {
+		return empCode;
+	}
+
+	public void setEmpCode(Integer empCode) {
+		this.empCode = empCode;
+	}
+
+	public Integer getAvailabilityId() {
+		return availabilityId;
+	}
+
+	public void setAvailabilityId(Integer availabilityId) {
+		this.availabilityId = availabilityId;
+	}
+
+	public Integer getTypeId() {
+		return typeId;
+	}
+
+	public void setTypeId(Integer typeId) {
+		this.typeId = typeId;
+	}
+
+	public Float getAvailability() {
+		return availability;
+	}
+
+	public void setAvailability(Float availability) {
+		this.availability = availability;
+	}
+
+	public Date getLeaveYearFrom() {
+		return leaveYearFrom;
+	}
+
+	public void setLeaveYearFrom(Date leaveYearFrom) {
+		this.leaveYearFrom = leaveYearFrom;
+	}
+
+	public Date getLeaveYearTo() {
+		return leaveYearTo;
+	}
+
+	public void setLeaveYearTo(Date leaveYearTo) {
+		this.leaveYearTo = leaveYearTo;
+	}
+
+	public Float getEligibleLeaves() {
+		return eligibleLeaves;
+	}
+
+	public void setEligibleLeaves(Float eligibleLeaves) {
+		this.eligibleLeaves = eligibleLeaves;
+	}
+
+	public Float getLeavesTaken() {
+		return leavesTaken;
+	}
+
+	public void setLeavesTaken(Float leavesTaken) {
+		this.leavesTaken = leavesTaken;
+	}
+	
+	
+}

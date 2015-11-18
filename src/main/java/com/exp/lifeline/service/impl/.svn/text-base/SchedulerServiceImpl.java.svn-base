@@ -1,0 +1,304 @@
+package com.experion.lts.service.impl;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.context.MessageSource;
+
+import com.experion.lts.dao.SchedulerDAO;
+import com.experion.lts.entity.Employee;
+import com.experion.lts.service.SchedulerService;
+import com.experion.lts.util.LTSUtil;
+import com.experion.lts.view.EmailView;
+
+public class SchedulerServiceImpl implements SchedulerService
+{
+	private static final String TRAINEE_DESIG = "trainee";
+	private SchedulerDAO schedulerDAO;
+	private MessageSource messageSource;
+
+	public void setSchedulerDAO(SchedulerDAO schedulerDAO) {
+		this.schedulerDAO = schedulerDAO;
+	}
+	
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	public void resetLeave() throws ParseException 
+	{
+		int flag = 0;
+		System.out.println("inside reset leave");
+		List<Employee> employeeDetails = schedulerDAO.getEmployeeDetails();
+		SimpleDateFormat sf = new SimpleDateFormat("MM/dd/yyyy");
+		String availResetStatus = messageSource.getMessage("lts.availabiity.reset.status", null, Locale.getDefault());
+		for(int i=0;i<employeeDetails.size();i++)
+		{
+			System.out.println("Emp Code"+employeeDetails.get(i).getEmpCode());
+			Calendar dateNow = Calendar.getInstance();
+			Date currentDate = sf.parse(sf.format(dateNow.getTime()));
+			Date standardDate = sf.parse(sf.format(employeeDetails.get(i).getStandardDate()));
+			int yearDifference = LTSUtil.getYearDifference(standardDate, currentDate);
+			int monthDifference = LTSUtil.getMonthsDifference(standardDate, currentDate);
+			Calendar calDate = Calendar.getInstance();
+			calDate.setTime(standardDate);
+			currentDate = sf.parse(sf.format(currentDate));
+			if(employeeDetails.get(i).getEmpDesignation().toLowerCase().contains(TRAINEE_DESIG) && !employeeDetails.get(i).getResetStatus().equalsIgnoreCase(availResetStatus))
+			{
+				calDate.add(Calendar.MONTH, employeeDetails.get(i).getTrainingPeriod());
+			}
+			else
+			{
+				yearDifference = yearDifference + 1;
+				calDate.add(Calendar.YEAR, yearDifference);
+				calDate.add(Calendar.MONTH, -1);
+			}
+			Date resetDate = sf.parse(sf.format(calDate.getTime()));
+			if(currentDate.compareTo(resetDate) == 0)
+			{
+				Date leaveYearFrom;
+				if(employeeDetails.get(i).getEmpDesignation().toLowerCase().contains(TRAINEE_DESIG) && !employeeDetails.get(i).getResetStatus().equalsIgnoreCase(availResetStatus))
+				{
+					leaveYearFrom = sf.parse(sf.format(calDate.getTime()));
+				}
+				else
+				{
+					calDate.add(Calendar.MONTH, 1);
+					leaveYearFrom = sf.parse(sf.format(calDate.getTime()));
+				}
+				calDate.add(Calendar.YEAR, 1);
+				calDate.add(Calendar.DATE, -1);
+				Date leaveYearTo = sf.parse(sf.format(calDate.getTime()));
+				schedulerDAO.resetAvailability(employeeDetails.get(i), leaveYearFrom, leaveYearTo, yearDifference);
+			}
+			if(!employeeDetails.get(i).getEmpDesignation().toLowerCase().contains(TRAINEE_DESIG) || (employeeDetails.get(i).getEmpDesignation().toLowerCase().contains(TRAINEE_DESIG) && employeeDetails.get(i).getResetStatus().equalsIgnoreCase(availResetStatus)))
+			{
+				if(((monthDifference + 1) % 6) == 0 && ((monthDifference + 1) % 12) != 0)
+				{
+					calDate.setTime(standardDate);
+					calDate.add(Calendar.MONTH, monthDifference);
+					Date earnLeaveResetDate = sf.parse(sf.format(calDate.getTime()));
+					if(currentDate.compareTo(earnLeaveResetDate) == 0)
+					{
+						flag = 1;
+						Date[] currentLeaveYear = LTSUtil.getCurrentLeaveYear(employeeDetails.get(i));
+						schedulerDAO.updateEarnedLeave(employeeDetails.get(i), currentLeaveYear, flag);
+					}
+				}
+				else if((monthDifference % 12) == 0)
+				{
+					calDate.setTime(standardDate);
+					calDate.add(Calendar.MONTH, monthDifference);
+					Date earnLeaveResetDate = sf.parse(sf.format(calDate.getTime()));
+					if(currentDate.compareTo(earnLeaveResetDate) == 0)
+					{
+						flag = 2;
+						calDate.add(Calendar.DATE, -1);
+						Date[] nextLeaveYear = LTSUtil.getNextLeaveYear(sf.parse(sf.format(calDate.getTime())));
+						schedulerDAO.updateEarnedLeave(employeeDetails.get(i), nextLeaveYear, flag);
+						Date[] prevLeaveYear = new Date[2];
+						prevLeaveYear[1] = sf.parse(sf.format(calDate.getTime()));
+						calDate.add(Calendar.YEAR, -1);
+						calDate.add(Calendar.DATE, 1);
+						prevLeaveYear[0] = sf.parse(sf.format(calDate.getTime()));
+						//schedulerDAO.setEarnLeaveCountToZero(employeeDetails.get(i), prevLeaveYear);
+					}
+				}
+			}
+		}
+	}
+
+	@SuppressWarnings("unused")
+	public void sendMail() 
+	{
+		System.out.println("inside send mail ");
+		SimpleDateFormat sf = new SimpleDateFormat("dd-MMM-yyyy");
+		/* Leave Statuses*/
+		String requestStatus = messageSource.getMessage("lts.leave.status.request", null, Locale.getDefault());
+		String recommendedStatus = messageSource.getMessage("lts.rec.status.recommend", null, Locale.getDefault());
+		String recRejectedStatus = messageSource.getMessage("lts.rec.status.reject", null, Locale.getDefault());
+		String approvedStatus = messageSource.getMessage("lts.mgr.status.approve", null, Locale.getDefault());
+		String mgrRejectedStatus = messageSource.getMessage("lts.mgr.status.reject", null, Locale.getDefault());
+		/* Comp-Off Statuses*/
+		String compOffRequestStatus = messageSource.getMessage("lts.compoff.status.request", null, Locale.getDefault());
+		String compOffRecommendedStatus = messageSource.getMessage("lts.rec.status.recommend.compoff", null, Locale.getDefault());
+		String recRejectedCompOffStatus = messageSource.getMessage("lts.rec.status.reject.compoff", null, Locale.getDefault());
+		String compOffApprovedStatus = messageSource.getMessage("lts.mgr.status.approve.compoff", null, Locale.getDefault());
+		String mgrRejectedCompOffStatus = messageSource.getMessage("lts.mgr.status.reject.compoff", null, Locale.getDefault());
+		/* Cancel Statuses*/
+		String notCancelledStatus = messageSource.getMessage("lts.compoff.status.notcancelled", null, Locale.getDefault());
+		String adminCancelStatus = messageSource.getMessage("lts.leave.status.adminCancel", null, Locale.getDefault());
+		/* Mail Statuses - Leave*/
+		String finalMailStatus = messageSource.getMessage("lts.mail.status.finalmail", null, Locale.getDefault());
+		String firstMailStatus = messageSource.getMessage("lts.mail.status.notsent", null, Locale.getDefault());
+		String requestMailStatus =  messageSource.getMessage("lts.leave.mail.status.request", null, Locale.getDefault());
+		String recommendedMailStatus = messageSource.getMessage("lts.leave.mail.status.recommended", null, Locale.getDefault());
+		String recRejectedMailStatus = messageSource.getMessage("lts.leave.mail.status.recreject", null, Locale.getDefault());
+		String approvedMailStatus = messageSource.getMessage("lts.leave.mail.status.approved", null, Locale.getDefault());
+		String mgrRejectedMailStatus = messageSource.getMessage("lts.leave.mail.status.mgrreject", null, Locale.getDefault());
+		/* Mail Statuses - Comp-Off*/
+		String compOffRequestMailStatus =  messageSource.getMessage("lts.compoff.mail.status.request", null, Locale.getDefault());
+		String compOffRecommendedMailStatus = messageSource.getMessage("lts.compoff.mail.status.recommended", null, Locale.getDefault());
+		String recCompOffRejectedMailStatus = messageSource.getMessage("lts.compoff.mail.status.recreject", null, Locale.getDefault());
+		String mgrCompOffRejectedMailStatus = messageSource.getMessage("lts.compoff.mail.status.mgrreject", null, Locale.getDefault());
+		String compOffApprovedMailStatus = messageSource.getMessage("lts.compoff.mail.status.approved", null, Locale.getDefault());
+		
+		String senderAddress = messageSource.getMessage("lts.mail.senderaddress", null, Locale.getDefault());
+		String supportTeam = messageSource.getMessage("lts.mail.supportteam", null, Locale.getDefault());
+		
+		List<EmailView> leaveDetails = schedulerDAO.getLeaveDetails();
+		if(!leaveDetails.isEmpty())
+		{
+			for(int i=0; i<leaveDetails.size(); i++)
+			{
+				if(leaveDetails.get(i).getCancelStatus().equals(notCancelledStatus))
+				{
+					if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(requestStatus) && leaveDetails.get(i).getMailStatus().equalsIgnoreCase(firstMailStatus))
+					{
+						String description = "<b>A leave has been requested.</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Leave Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+						boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getRecEmail(), leaveDetails.get(i).getRecommenderName(), description, supportTeam);
+						schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), requestMailStatus);
+					}
+					else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(recommendedStatus) && leaveDetails.get(i).getMailStatus().equalsIgnoreCase(requestMailStatus))
+					{
+						String descriptionForEmployee = "<b>Your leave request has been recommended.</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Leave Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+						String descriptionForManager = "<b>A leave request has been recommended.</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Leave Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+						boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getEmpEmail(), leaveDetails.get(i).getEmpName(), descriptionForEmployee, supportTeam);
+						boolean isMailSend1 = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getMgrEmail(), leaveDetails.get(i).getManagerName(), descriptionForManager, supportTeam);
+						schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), recommendedMailStatus);
+					}
+					else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(approvedStatus) && leaveDetails.get(i).getMailStatus().equalsIgnoreCase(recommendedMailStatus))
+					{
+						String descriptionForEmployee = "<b>Your leave request has been approved.</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Leave Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+						String descriptionForRecommender = "<b>The recommended leave for "+leaveDetails.get(i).getEmpName()+" has been approved.</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Leave Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+						boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getEmpEmail(), leaveDetails.get(i).getEmpName(), descriptionForEmployee, supportTeam);
+						boolean isMailSend1 = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getRecEmail(), leaveDetails.get(i).getRecommenderName(), descriptionForRecommender, supportTeam);
+						schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), approvedMailStatus);
+					}
+					else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(compOffRequestStatus) && leaveDetails.get(i).getMailStatus().equalsIgnoreCase(firstMailStatus))
+					{
+						String description = "<b>A compensatory-Off has been requested.</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Request Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+						boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getRecEmail(), leaveDetails.get(i).getRecommenderName(), description, supportTeam);
+						schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), compOffRequestMailStatus);
+					}
+					else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(compOffRecommendedStatus) && leaveDetails.get(i).getMailStatus().equalsIgnoreCase(compOffRequestMailStatus))
+					{
+						String descriptionForEmployee = "<b>Your compensatory-off request has been recommended.</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Request Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+						String descriptionForManager = "<b>A compensatory-off request has been recommended.</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Leave Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+						boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getEmpEmail(), leaveDetails.get(i).getEmpName(), descriptionForEmployee, supportTeam);
+						boolean isMailSend1 = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getMgrEmail(), leaveDetails.get(i).getManagerName(), descriptionForManager, supportTeam);
+						schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), compOffRecommendedMailStatus);
+					}
+					else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(compOffApprovedStatus) && leaveDetails.get(i).getMailStatus().equalsIgnoreCase(compOffRecommendedMailStatus))
+					{
+						String descriptionForEmployee = "<b>Your compensatory-off request has been approved.</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Leave Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+						String descriptionForRecommender = "<b>The recommended compensatory-off for "+leaveDetails.get(i).getEmpName()+" has been approved.</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Request Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+						boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getEmpEmail(), leaveDetails.get(i).getEmpName(), descriptionForEmployee, supportTeam);
+						boolean isMailSend1 = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getRecEmail(), leaveDetails.get(i).getRecommenderName(), descriptionForRecommender, supportTeam);
+						schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), compOffApprovedMailStatus);
+					}
+					else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(recRejectedStatus) && leaveDetails.get(i).getMailStatus().equalsIgnoreCase(requestMailStatus))
+					{
+						String description = "<b>Your leave request has been rejected.</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Leave Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"<br/> Reason:"+ leaveDetails.get(i).getRecRejectReason()+"";
+						boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getEmpEmail(), leaveDetails.get(i).getEmpName(), description, supportTeam);
+						schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), recRejectedMailStatus);
+					}
+					else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(mgrRejectedStatus) && leaveDetails.get(i).getMailStatus().equalsIgnoreCase(recommendedMailStatus))
+					{
+						String descriptionForEmployee = "<b>Your leave request has been rejected</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Leave Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"<br/> Reason:"+ leaveDetails.get(i).getMgrRejectReason()+"";
+						String descriptionForRecommender = "<b>The recommended leave request for "+leaveDetails.get(i).getEmpName()+" has been rejected.</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Leave Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"<br/> Reason:"+ leaveDetails.get(i).getMgrRejectReason()+"";
+						boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getEmpEmail(), leaveDetails.get(i).getEmpName(), descriptionForEmployee, supportTeam);
+						boolean isMailSend1 = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getRecEmail(), leaveDetails.get(i).getRecommenderName(), descriptionForRecommender, supportTeam);
+						schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), mgrRejectedMailStatus);
+					}
+					else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(recRejectedCompOffStatus) && leaveDetails.get(i).getMailStatus().equalsIgnoreCase(compOffRequestMailStatus))
+					{
+						String description = "<b>Your compensatory-off request has been rejected.</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Request Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"<br/> Reason:"+ leaveDetails.get(i).getRecRejectReason()+"";
+						boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getEmpEmail(), leaveDetails.get(i).getEmpName(), description, supportTeam);
+						schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), recCompOffRejectedMailStatus);
+					}
+					else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(mgrRejectedCompOffStatus) && leaveDetails.get(i).getMailStatus().equalsIgnoreCase(compOffRecommendedMailStatus))
+					{
+						String descriptionForEmployee = "<b>Your compensatory-off request has been rejected</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Request Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"<br/> Reason:"+ leaveDetails.get(i).getMgrRejectReason()+"";
+						String descriptionForRecommender = "<b>The recommended compensatory-off request for "+leaveDetails.get(i).getEmpName()+" has been rejected.</b><br/><b>Details:</b><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br/>Leave Type:"+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"<br/> Reason:"+ leaveDetails.get(i).getMgrRejectReason()+"";
+						boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getEmpEmail(), leaveDetails.get(i).getEmpName(), descriptionForEmployee, supportTeam);
+						boolean isMailSend1 = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getRecEmail(), leaveDetails.get(i).getRecommenderName(), descriptionForRecommender, supportTeam);
+						schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), mgrCompOffRejectedMailStatus);
+					}
+				}
+				else if(leaveDetails.get(i).getCancelStatus().equals(adminCancelStatus))
+				{
+					if(!leaveDetails.get(i).getMailStatus().equalsIgnoreCase(finalMailStatus))
+					{
+						if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(requestStatus))
+						{
+							String description = "<b>The following leave request has been cancelled by Admin.</b><br><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br>Leave Type: "+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+							boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getRecEmail() ,leaveDetails.get(i).getRecommenderName(), description, supportTeam );
+							boolean isMailSend1 = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getEmpEmail() ,leaveDetails.get(i).getEmpName(), description, supportTeam);
+							schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), finalMailStatus);
+						}
+						else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(compOffRequestStatus))
+						{
+							String description = "<b>The following compensatory-off request has been cancelled by Admin.</b><br><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br>Request Type: "+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+							boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getRecEmail() ,leaveDetails.get(i).getRecommenderName(), description, supportTeam);
+							boolean isMailSend1 = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getEmpEmail() ,leaveDetails.get(i).getEmpName(), description, supportTeam);
+							schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), finalMailStatus);
+						}
+						else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(recommendedStatus) || leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(approvedStatus))
+						{
+							String description = "<b>The following leave request has been cancelled by Admin.</b><br><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br>Leave Type: "+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+							boolean isMailSend = LTSUtil.sendEmail(messageSource,  senderAddress, leaveDetails.get(i).getRecEmail() ,leaveDetails.get(i).getRecommenderName(), description, supportTeam);
+							boolean isMailSend1 = LTSUtil.sendEmail(messageSource,  senderAddress, leaveDetails.get(i).getMgrEmail() ,leaveDetails.get(i).getManagerName(), description, supportTeam);
+							boolean isMailSend2 = LTSUtil.sendEmail(messageSource,  senderAddress, leaveDetails.get(i).getEmpEmail() ,leaveDetails.get(i).getEmpName(), description, supportTeam);
+							schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), finalMailStatus);
+						}
+						else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(compOffRecommendedStatus) || leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(compOffApprovedStatus))
+						{
+							String description = "<b>The following compensatory-off requeat has been cancelled by Admin.</b><br><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br>Request Type: "+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+							boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getRecEmail() ,leaveDetails.get(i).getRecommenderName(), description, supportTeam);
+							boolean isMailSend1 = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getMgrEmail() ,leaveDetails.get(i).getManagerName(), description, supportTeam);
+							boolean isMailSend2 = LTSUtil.sendEmail(messageSource,  senderAddress, leaveDetails.get(i).getEmpEmail() ,leaveDetails.get(i).getEmpName(), description, supportTeam);
+							schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), finalMailStatus);
+						}
+					}
+				}
+				else
+				{
+					if(!leaveDetails.get(i).getMailStatus().equalsIgnoreCase(finalMailStatus))
+					{
+						if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(requestStatus))
+						{
+							String description = "<b>The following leave request has been cancelled.</b><br><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br>Leave Type: "+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+							boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getRecEmail() ,leaveDetails.get(i).getRecommenderName(), description, supportTeam);
+							schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), finalMailStatus);
+						}
+						else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(compOffRequestStatus))
+						{
+							String description = "<b>The following compensatory-off request has been cancelled.</b><br><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br>Request Type: "+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+							boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getRecEmail() ,leaveDetails.get(i).getRecommenderName(), description, supportTeam);
+							schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), finalMailStatus);
+						}
+						else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(recommendedStatus) || leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(approvedStatus))
+						{
+							String description = "<b>The following leave request has been cancelled.</b><br><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br>Leave Type: "+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+							boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getRecEmail() ,leaveDetails.get(i).getRecommenderName(), description, supportTeam);
+							boolean isMailSend1 = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getMgrEmail() ,leaveDetails.get(i).getManagerName(), description, supportTeam);
+							schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), finalMailStatus);
+						}
+						else if(leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(compOffRecommendedStatus) || leaveDetails.get(i).getLeaveStatus().equalsIgnoreCase(compOffApprovedStatus))
+						{
+							String description = "<b>The following compensatory-off requeat has been cancelled.</b><br><br>Employee Name:"+leaveDetails.get(i).getEmpName()+"<br>Request Type: "+leaveDetails.get(i).getLeaveType()+"<br> From Date: "+sf.format(leaveDetails.get(i).getFromDate())+"<br> To Date: "+sf.format(leaveDetails.get(i).getToDate())+"<br> No Of Days: "+leaveDetails.get(i).getNoOfDays()+"";
+							boolean isMailSend = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getRecEmail() ,leaveDetails.get(i).getRecommenderName(), description, supportTeam);
+							boolean isMailSend1 = LTSUtil.sendEmail(messageSource, senderAddress, leaveDetails.get(i).getMgrEmail() ,leaveDetails.get(i).getManagerName(), description, supportTeam);
+							schedulerDAO.updateMailStatus(leaveDetails.get(i).getLeaveId(), finalMailStatus);
+						}
+					}
+				}
+			}
+		}
+	}
+}

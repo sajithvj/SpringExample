@@ -1,0 +1,220 @@
+package com.experion.lts.dao.hibernate;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.context.MessageSource;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+
+import com.experion.lts.dao.LeaveAdminDAO;
+import com.experion.lts.entity.Employee;
+import com.experion.lts.entity.LeaveAvailability;
+
+public class LeaveAdminHibernateDAO extends HibernateDaoSupport implements LeaveAdminDAO
+{
+	public static final float MAX_EARNED_LEAVE = 15;
+	private MessageSource messageSource;
+	
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Employee> getAllEmpDetails()
+	{
+		try
+		{
+			return getHibernateTemplate().find("from Employee");
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public String getSelectedEmpName(int empCode) 
+	{
+		try
+		{
+			List<Employee> empNameList = getHibernateTemplate().find("from Employee where empCode = ?",empCode);
+			return empNameList.get(0).getEmpName();
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public void resetLeaves(int empCode, int[] leaveTypes, float[] leaveCount, String[] leaveDuration) 
+	{
+		try
+		{
+			SimpleDateFormat sf = new SimpleDateFormat("MM/dd/yyyy");
+			SimpleDateFormat sf1 = new SimpleDateFormat("dd-MMM-yyyy");
+			Date leaveYearFrom = sf.parse(sf.format(sf1.parse(leaveDuration[0])));
+			Date leaveYearTo = sf.parse(sf.format(sf1.parse(leaveDuration[1])));
+			//String leaveName = messageSource.getMessage("lts.leavetype.earnedleave", null, Locale.getDefault());
+			for(int i=0; i<leaveTypes.length; i++)
+			{
+				/*//List<LeaveTypes> leaveCountList = getHibernateTemplate().find("from LeaveTypes where leaveTypeId = ?",leaveTypes[i]);
+				List<Integer> earnedLeaveId = getHibernateTemplate().find("select leaveTypeId from LeaveTypes where leaveType = ?", leaveName);
+				if(leaveTypes[i] == earnedLeaveId.get(0))
+				{
+					List<LeaveAvailability> leaveList = getHibernateTemplate().find("from LeaveAvailability where empCode = ? and typeId = ?",empCode,leaveTypes[i]);
+					if((leaveList.get(0).getAvailability() + leaveCount[i]) > MAX_EARNED_LEAVE)
+					{
+						getHibernateTemplate().bulkUpdate("update LeaveAvailability set availability = ?, leaveYearFrom = ?, leaveYearTo = ? where empCode = ? and typeId = ?",MAX_EARNED_LEAVE, leaveYearFrom, leaveYearTo, empCode, leaveTypes[i]);
+					}
+					else
+					{
+						getHibernateTemplate().bulkUpdate("update LeaveAvailability set availability = ?, leaveYearFrom = ?, leaveYearTo = ? where empCode = ? and typeId = ?", (leaveList.get(0).getAvailability() + leaveCount[i]), leaveYearFrom, leaveYearTo, empCode, leaveTypes[i]);	
+					}
+
+				}
+				else
+				{*/
+					getHibernateTemplate().bulkUpdate("update LeaveAvailability set availability = ?, eligibleLeaves = ?, leavesTaken = 0 where leaveYearFrom = ? and leaveYearTo = ? and empCode = ? and typeId = ?", leaveCount[i], leaveCount[i], leaveYearFrom, leaveYearTo, empCode, leaveTypes[i]);
+			}
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Employee> searchEmployee(String empName) 
+	{
+		try
+		{
+			empName = empName.toLowerCase();
+			return getHibernateTemplate().find("from Employee where lower(empName) like ?","%"+empName+"%");
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public List<Employee> showEmployeeDetails()
+	{
+		try
+		{
+			@SuppressWarnings("unchecked")
+			List<Employee> employeeDetails = getHibernateTemplate().find("from Employee");
+			return employeeDetails;
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public List<Employee> searchEmployeeByCode(int empCode)
+	{
+		try
+		{
+			@SuppressWarnings("unchecked")
+			List<Employee> empDetails = getHibernateTemplate().find("from Employee where empCode=?",empCode);
+			return empDetails;
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	public Date getJoiningDate(int empCode)
+	{
+		try
+		{
+			List<Date> joiningDate = getHibernateTemplate().find("select joiningDate from Employee where empCode = ?", empCode);
+			return joiningDate.get(0);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<LeaveAvailability> getAllAvailabileLeave(int empCode, Date fromDate, Date toDate) 
+	{
+		try
+		{
+			return getHibernateTemplate().find("from LeaveAvailability where empCode = ? and leaveYearFrom = ? and leaveYearTo = ?", empCode, fromDate, toDate);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public String getLeaveTypeName(int typeId) 
+	{
+		try
+		{
+			List<String> leaveName = getHibernateTemplate().find("select leaveType from LeaveTypes where leaveTypeId = ?", typeId);
+			return leaveName.get(0);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public List<Employee> searchEmployeeDetails(String empName,
+			String designation) {
+		try
+		{
+			if(StringUtils.EMPTY.equals(empName) && StringUtils.EMPTY.equals(designation))
+			{
+				@SuppressWarnings("unchecked")
+				List<Employee> empDetails = getHibernateTemplate().find("from Employee");
+				return empDetails;
+
+			}
+			if(StringUtils.EMPTY.equals(empName))
+			{
+				@SuppressWarnings("unchecked")
+				List<Employee> empDetails = getHibernateTemplate().find("from Employee where empDesignation=?",designation);
+				return empDetails;
+			}
+			if(StringUtils.EMPTY.equals(designation))
+			{
+				@SuppressWarnings("unchecked")
+				List<Employee> empDetails = getHibernateTemplate().find("from Employee where empName=?",empName);
+				return empDetails;
+			}
+			else
+			{
+				@SuppressWarnings("unchecked")
+				List<Employee> empDetails = getHibernateTemplate().find("from Employee where empName=? and empDesignation=?",empName,designation);
+				return empDetails;
+			}
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+}

@@ -1,0 +1,49 @@
+package com.experion.lts.dao;
+
+import java.util.Date;
+import java.util.List;
+
+import com.experion.lts.entity.Employee;
+import com.experion.lts.entity.EmployeeLeaves;
+import com.experion.lts.entity.LeaveAvailability;
+import com.experion.lts.entity.LeaveTypes;
+
+public interface LeaveDAO {
+	
+	public List<EmployeeLeaves> getAppliedLeaves(int empCode);
+	
+	public Float getLeaveAvailabilty(int empCode, int leaveType, Date leaveYearFrom, Date leaveYearTo);
+	
+	public void saveLeaveRequest(EmployeeLeaves employeeLeaves, int empCode, Date leaveYearFrom, Date leaveYearTo);
+	
+	public List<Employee> getRecommenders();
+	
+	public List<Employee> getManagers();
+	
+	public List<LeaveTypes> getLeaveTypesByGender(int empCode);
+	
+	public List<LeaveTypes> getLeaveTypes();
+	
+	public List<LeaveAvailability> getAvailableLeaves(int empCode , Date leaveYearFrom, Date leaveYearTo);
+	
+	public void cancelLeave(int leaveId, int empCode);
+	
+	public List<EmployeeLeaves> getCompOffRequests(int empCode);
+
+	public void saveCompOffCancelStatus(int compOffId);
+	
+	public void saveCompOffrequest(EmployeeLeaves employeeLeaves);
+	
+	public String getLeaveStatus(int leaveId);
+	
+	public String getCancelStatus(int leaveId);
+	
+	public Date getJoiningDate(int empCode);
+	
+	public List<EmployeeLeaves> getSearchResults(Date leaveYearFrom,Date leaveYearTo,int empCode);
+	/*public List<EmployeeLeaves> getLeaveDetails(int leaveId);
+	
+	public void updateLeaveRequest(EmployeeLeaves employeeLeaves, int empCode);
+	
+	public void updateCompOffRequest(EmployeeLeaves employeeLeaves);*/
+}

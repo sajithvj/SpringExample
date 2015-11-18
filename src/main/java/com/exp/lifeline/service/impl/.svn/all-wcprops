@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/lts/!svn/ver/731/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/service/impl
+END
+LeaveServiceImpl.java
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/lts/!svn/ver/730/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/service/impl/LeaveServiceImpl.java
+END
+SchedulerServiceImpl.java
+K 25
+svn:wc:ra_dav:version-url
+V 124
+/svn/lts/!svn/ver/731/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/service/impl/SchedulerServiceImpl.java
+END
+LeaveAdminServiceImpl.java
+K 25
+svn:wc:ra_dav:version-url
+V 125
+/svn/lts/!svn/ver/729/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/service/impl/LeaveAdminServiceImpl.java
+END
+LeaveRecommendServiceImpl.java
+K 25
+svn:wc:ra_dav:version-url
+V 129
+/svn/lts/!svn/ver/705/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/service/impl/LeaveRecommendServiceImpl.java
+END
+LoginServiceImpl.java
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/lts/!svn/ver/130/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/service/impl/LoginServiceImpl.java
+END

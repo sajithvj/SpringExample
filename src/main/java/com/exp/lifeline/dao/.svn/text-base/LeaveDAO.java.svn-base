@@ -1,0 +1,72 @@
+package com.experion.lts.dao;
+
+import java.util.Date;
+import java.util.List;
+
+import com.experion.lts.entity.Employee;
+import com.experion.lts.entity.EmployeeLeaves;
+import com.experion.lts.entity.LeaveAvailability;
+import com.experion.lts.entity.LeaveTypes;
+
+public interface LeaveDAO {
+	
+	public List<EmployeeLeaves> getAppliedLeaves(int empCode);
+	
+	public Float getLeaveAvailabilty(int empCode, int leaveType, Date leaveYearFrom, Date leaveYearTo);
+	
+	public void saveLeaveRequest(EmployeeLeaves employeeLeaves, Employee empDetails, Date[] leaveDuration);
+	
+	public List<Employee> getRecommenders(int empCode);
+	
+	public List<Employee> getManagers(int empCode);
+	
+	public List<LeaveTypes> getLeaveTypesByGender(int empCode);
+	
+	public List<LeaveTypes> getLeaveTypes();
+	
+	public List<LeaveAvailability> getAvailableLeaves(int empCode, Date leaveYearFrom, Date leaveYearTo);
+	
+	public void cancelLeave(int leaveId, Date leaveYearFrom, Date leaveYearTo);
+	
+	public List<EmployeeLeaves> getCompOffRequests(int empCode);
+
+	public void saveCompOffCancelStatus(int compOffId, Date leaveYearFrom, Date leaveYearTo);
+	
+	public void saveCompOffrequest(EmployeeLeaves employeeLeaves);
+	
+	public String getLeaveStatus(int leaveId);
+	
+	public String getCancelStatus(int leaveId);
+	
+	public Date getJoiningDate(int empCode);
+	
+	public List<EmployeeLeaves> getSearchResults(Date leaveYearFrom,Date leaveYearTo,int empCode);
+	
+	public Date getToDate(int leaveId);
+	
+	public boolean getSameDatesStatus(int flag, int empCode, Date fromDate, Date toDate);
+	
+	public void saveRequest(EmployeeLeaves employeeLeaves, Employee empDetails, Date[] currentLeaveDuration, Date[] prevLeaveDuration, float prevYearLeaveDays, float currentYearLeaveDays);
+	
+	public void cancelCombinedLeave(int leaveId, Date[] prevLeaveDuration, Date[] currentleaveDuration, float prevYearLeaveDays, float currentYearLeaveDays);
+	
+	public List<LeaveAvailability> getPreviousAvailability(int empCode, Date leaveYearFrom, Date leaveYearTo);
+
+	public void saveLOPRequest(EmployeeLeaves employeeLeaves);
+
+	public void changePassword(int empCode, String password);
+	
+	public long getEducationLeaveCount(Employee empDetails, Date leaveYearFrom, Date leaveYearTo);
+
+	public List<EmployeeLeaves> getEducationLeaveDetails(Employee empDetails);
+
+	public List<EmployeeLeaves> getCompOffDetails(int compOffId);
+
+
+	
+	/*public List<EmployeeLeaves> getLeaveDetails(int leaveId);
+	
+	public void updateLeaveRequest(EmployeeLeaves employeeLeaves, int empCode);
+	
+	public void updateCompOffRequest(EmployeeLeaves employeeLeaves);*/
+}

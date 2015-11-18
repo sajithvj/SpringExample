@@ -1,0 +1,20 @@
+<Context path="/lifeline" reloadable="true" docBase="/lifeline">
+
+   <Environment description="Prod or test Environment" name="jndi/environment"
+		override="false" type="java.lang.String" value="test" />
+		
+	<Resource 
+		name="jdbc/lifelineDB" 
+		auth="Container"  
+        type="javax.sql.DataSource"  
+        driverClassName="org.postgresql.Driver"  
+		maxActive="10000" 
+		maxIdle="30" 
+		maxWait="1000"
+		username="postgres" 
+		password="admin"
+		url="jdbc:postgresql://192.168.1.6:5432/postgres"/>
+
+</Context>
+<!-- driverClassName="net.sourceforge.jtds.jdbc.Driver" -->
+<!-- driverClassName="oracle.jdbc.driver.OracleDriver"-->

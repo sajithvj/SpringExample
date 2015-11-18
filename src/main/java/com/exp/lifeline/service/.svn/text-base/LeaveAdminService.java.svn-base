@@ -1,0 +1,56 @@
+package com.experion.lts.service;
+
+import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
+
+import com.experion.lts.entity.Employee;
+import com.experion.lts.entity.EmployeeDesignation;
+import com.experion.lts.entity.EmployeeLeaves;
+import com.experion.lts.entity.LeaveAvailability;
+
+public interface LeaveAdminService 
+{
+	public List<Employee> getAllEmpDetails();
+	
+	public String getSelectedEmpName(int empCode);
+	
+	public void resetLeaves(int empCode, int[] leaveTypes, float[] leaveCounts, String[] leaveDuration);
+	
+	public List<Employee> searchEmployee(String empName);
+	
+	public List<Employee> showEmployeeDetails();
+	
+	public List<Employee> searchEmployeeByCode(int empCode);
+	
+	public String getResponseString(int empCode) throws ParseException;
+	
+	public List<LeaveAvailability> getAllAvailabileLeave(int empCode, String currentYear) throws ParseException;
+	
+/*	public String getAvailabilityByYear(String leaveYear, String currentYear, int selectedEmpCode) throws ParseException;*/
+
+	public List<Employee> searchEmployeeDetails(String empName, String designation);
+
+	public List<EmployeeLeaves> getLeaveDetails(int empCode, String leaveYear, String statusType,
+			String leaveType);
+	
+	public List<EmployeeLeaves> getAppliedLeaves(int empCode);
+
+	public void addNewEmployee(Employee employee) throws ParseException;
+
+	public List<Employee> searchForEmployee(int code);
+
+	public List<Employee> searchEmpDetails(String employeeName,
+			String employeeDesignation, String employeeRole);
+
+	public List<EmployeeDesignation> getDesignationDetails();
+	
+	public void markHoliday(Date selectedDate, String holidayRemark) throws ParseException;
+
+	public void cancelLeaveByAdmin(int leaveId, List<Employee> emplDetails) throws ParseException;
+
+	public List<LeaveAvailability> getLeaveAvailability(int empCode);
+
+	public List<EmployeeLeaves> getEmployeeDetails(int leaveId);
+
+}

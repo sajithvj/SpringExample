@@ -1,0 +1,12 @@
+package com.experion.lts.service;
+
+import java.util.List;
+
+import com.experion.lts.entity.Employee;
+
+
+public interface LoginService {
+	
+	public List<Employee> searchEmployee(int employeeCode,String password);
+	
+}

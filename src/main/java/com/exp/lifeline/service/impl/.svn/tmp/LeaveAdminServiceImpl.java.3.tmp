@@ -1,0 +1,343 @@
+package com.experion.lts.service.impl;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.context.MessageSource;
+
+import com.experion.lts.dao.LeaveAdminDAO;
+import com.experion.lts.entity.Employee;
+import com.experion.lts.entity.EmployeeDesignation;
+import com.experion.lts.entity.EmployeeLeaves;
+import com.experion.lts.entity.Holidays;
+import com.experion.lts.entity.LeaveAvailability;
+import com.experion.lts.entity.LeaveTypes;
+import com.experion.lts.service.LeaveAdminService;
+import com.experion.lts.util.LTSUtil;
+
+public class LeaveAdminServiceImpl implements LeaveAdminService
+{
+	private static final float CASUAL_LEAVE_COUNT = 5;
+	private static final float EARNED_LEAVE_COUNT = 0;
+	private static final float EDUCATION_LEAVE_COUNT = 0;
+	private LeaveAdminDAO leaveAdminDAO;
+	
+	private MessageSource messageSource;
+
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	public LeaveAdminDAO getLeaveAdminDAO() {
+		return leaveAdminDAO;
+	}
+
+	public void setLeaveAdminDAO(LeaveAdminDAO leaveAdminDAO) {
+		this.leaveAdminDAO = leaveAdminDAO;
+	}
+
+	public List<Employee> getAllEmpDetails()
+	{
+		return leaveAdminDAO.getAllEmpDetails();
+	}
+	public String getSelectedEmpName(int empCode)
+	{
+		return leaveAdminDAO.getSelectedEmpName(empCode);
+	}
+
+	public void resetLeaves(int empCode, int[] leaveTypes, float[] leaveCounts, String[] leaveDuration) 
+	{
+		leaveAdminDAO.resetLeaves(empCode, leaveTypes, leaveCounts, leaveDuration);	
+	}
+	
+	public List<Employee> searchEmployee(String empName)
+	{
+		return leaveAdminDAO.searchEmployee(empName);
+	}
+	
+	public List<Employee> showEmployeeDetails() {
+		List<Employee> employeeDetails = leaveAdminDAO.showEmployeeDetails();
+		return employeeDetails;
+	}
+
+	public List<Employee> searchEmployeeByCode(int empCode) {
+		List<Employee> empDetails = leaveAdminDAO.searchEmployeeByCode(empCode);
+ 		return empDetails;
+	}
+
+	public String getResponseString(int empCode) throws ParseException 
+	{
+		//SimpleDateFormat sf = new SimpleDateFormat("MM/dd/yyyy");
+		SimpleDateFormat sf1 = new SimpleDateFormat("dd-MMM-yyyy");
+		//Date joiningDate = sf.parse(sf.format(leaveAdminDAO.getJoiningDate(empCode)));
+		Employee emplDetails = leaveAdminDAO.searchEmployeeByCode(empCode).get(0);
+		Date[] currentLeaveYear = LTSUtil.getCurrentLeaveYear(emplDetails);
+		String leaveYearFrom = sf1.format(currentLeaveYear[0]);
+		String leaveYearTo = sf1.format(currentLeaveYear[1]);
+		return leaveYearFrom+"---"+leaveYearTo;
+		/*Calendar dateNow = Calendar.getInstance();
+		Date currentDate = sf.parse(sf.format(dateNow.getTime()));
+		int yearDifference = LTSUtil.getDaysBetweenDates(joiningDate, currentDate)/365;
+		yearDifference = yearDifference+1;
+		String[] yearArray= new String[yearDifference];
+		Calendar fromDate = Calendar.getInstance();
+		fromDate.setTime(joiningDate);
+		fromDate.add(Calendar.DATE, -1);
+		SimpleDateFormat sf1 = new SimpleDateFormat("dd-MMM-yyyy");
+		for(int i=yearDifference-1; i>=0; i--)
+		{
+			fromDate.add(Calendar.DATE, 1);
+			String str = sf1.format(fromDate.getTime());
+			fromDate.add(Calendar.YEAR, 1);
+			fromDate.add(Calendar.DATE, -1);
+			str +="---"+ sf1.format(fromDate.getTime());
+			yearArray[i] = str;
+		}
+		return yearArray;*/
+		/*Calendar fromDate = Calendar.getInstance();
+		fromDate.setTime(joiningDate);
+		fromDate.add(Calendar.YEAR, yearDifference);
+		fromDate.add(Calendar.DATE, -1);
+		SimpleDateFormat sf = new SimpleDateFormat("MM/dd/yyyy");
+		String responseText = "<div class=\"styled-select\" style=\"width:185px;\"><select id=\"leaveYear\" style=\"color:#6E6E6E;font-family:Tahoma;width:205px;font-size:14px;\" class=\"textBox\">";
+		for(int i=0; i<5; i++)
+		{
+			fromDate.add(Calendar.DATE, 1);
+			String str = sf.format(fromDate.getTime());
+			fromDate.add(Calendar.YEAR, 1);
+			fromDate.add(Calendar.DATE, -1);
+			str +="---"+ sf.format(fromDate.getTime());
+			responseText += "<option value=\""+str+"\">"+str+"</option>";
+		}
+		return responseText+"</select></div>";*/
+	}
+
+	public List<LeaveAvailability> getAllAvailabileLeave(int empCode, String currentYear) throws ParseException
+	{
+		String[] leaveDuration = currentYear.split("---");
+		SimpleDateFormat sf = new SimpleDateFormat("MM/dd/yyyy");
+		SimpleDateFormat sf1 = new SimpleDateFormat("dd-MMM-yyyy");
+		Date fromDate = sf.parse(sf.format(sf1.parse(leaveDuration[0])));
+		Date toDate = sf.parse(sf.format(sf1.parse(leaveDuration[1]))); 
+		return leaveAdminDAO.getAllAvailabileLeave(empCode,fromDate, toDate);
+	}
+
+	/*public String getAvailabilityByYear(String leaveYear, String currentYear, int selectedEmpCode) throws ParseException 
+	{
+		String responseText = "";
+		String reset = messageSource.getMessage("lts.button.reset", null, Locale.getDefault());
+		String[] leaveDuration = leaveYear.split("---");
+		SimpleDateFormat sf = new SimpleDateFormat("MM/dd/yyyy");
+		SimpleDateFormat sf1 = new SimpleDateFormat("dd-MMM-yyyy");
+		Date fromDate = sf.parse(sf.format(sf1.parse(leaveDuration[0])));
+		Date toDate = sf.parse(sf.format(sf1.parse(leaveDuration[1]))); 
+		List<LeaveAvailability> availableLeaves = leaveAdminDAO.getAllAvailabileLeave(selectedEmpCode,fromDate, toDate);
+		if(availableLeaves.isEmpty())
+		{
+			responseText = "<br/><br/><span style=\"text-align:center;margin-left: 130px;\" class=\"errorMsg\">No records found.</span>";
+		}
+		else
+		{
+			responseText = "<br/><table align=\"center\" style=\"font-family: Tahoma;color:#827B60;margin-top: 0px;\">";
+			for(int i=0; i<availableLeaves.size(); i++)
+			{
+				if(leaveYear.equals(currentYear))
+				{
+					responseText += "<tr><td><input type=\"checkbox\" name=\"leaveTypes\" id=\"leaveTypes\" value=\""+availableLeaves.get(i).getTypeId()+"\" onclick=\"enableTextBox();\"/></td>";
+				}
+				responseText += "<td width=\"155px;\">"+leaveAdminDAO.getLeaveTypeName(availableLeaves.get(i).getTypeId())+"</td>";
+				responseText += "<td width=\"40px;\">:</td><td><input type=\"text\" class=\"textBox\" style=\"width:50px;\" id=\""+availableLeaves.get(i).getTypeId()+"\" value=\""+availableLeaves.get(i).getAvailability()+"\" disabled=\"disabled\"/></td></tr>";
+			}
+			if(leaveYear.equals(currentYear))
+			{
+				responseText += "<tr><td colspan=\"3\"><div style=\"float: left;\" id=\"globalMsg\" class=\"errorMsg\"></div></td><td><input style=\"float: right;margin-right: 10px;width:50px;font-size: 12px;margin-top: 10px;\" type=\"button\" value=\""+reset+"\" onclick=\"resetLeave();\"/></td></tr>";
+			}
+			responseText += "</table>";
+		}
+		return responseText;
+	}*/
+
+	public List<Employee> searchEmployeeDetails(String empName,
+			String designation) {
+		List<Employee> empDetails = leaveAdminDAO.searchEmployeeDetails(empName,designation);
+ 		return empDetails;
+	}
+
+	public List<EmployeeLeaves> getLeaveDetails(int empCode, String leaveYear,
+			String statusType, String leaveType) {
+		List<EmployeeLeaves> empDetails = leaveAdminDAO.getLeaveDetails(empCode, leaveYear, statusType, leaveType);
+		return empDetails;
+	}
+	
+	public List<EmployeeLeaves> getAppliedLeaves(int empCode) {
+		List<EmployeeLeaves> empDetails=leaveAdminDAO.getAppliedLeaves(empCode);
+		return empDetails;
+	}
+
+	public void addNewEmployee(Employee employee) throws ParseException 
+	{
+		//List<Integer> availabilityIdList;
+		
+			SimpleDateFormat sf = new SimpleDateFormat("MM/dd/yyyy");
+			Date leaveYearFrom = employee.getJoiningDate();
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(leaveYearFrom);
+			String traineeSoftwareEngineer = messageSource.getMessage("lts.empDesignation.traineeSoftwareEngineer", null, Locale.getDefault());
+			if(employee.getEmpDesignation().equalsIgnoreCase(traineeSoftwareEngineer))
+			{
+				cal.add(Calendar.MONTH, employee.getTrainingPeriod());
+			}
+			else
+			{
+				cal.add(Calendar.YEAR, 1);
+			}
+			cal.add(Calendar.DATE, -1);
+			Date leaveYearTo = sf.parse(sf.format(cal.getTime()));
+			List<LeaveTypes> leaveTypes = leaveAdminDAO.getLeaveTypes(employee.getEmpGender());
+			LeaveAvailability leaveAvailability = new LeaveAvailability();
+			//availabilityIdList = leaveAdminDAO.getAvailabilityIdList(employee.getEmpCode());
+			String casualLeave = messageSource.getMessage("lts.leavetype.casualleave", null, Locale.getDefault());
+			String earnedLeave = messageSource.getMessage("lts.leavetype.earnedleave", null, Locale.getDefault());
+			String educationLeave = messageSource.getMessage("lts.leavetype.educationleave", null, Locale.getDefault());
+			if(employee.getEmpId() == 0)
+			{
+				for(int i=0;i<leaveTypes.size();i++)
+				{
+					/*if(employee.getEmpId() != 0)
+					{
+						leaveAvailability.setAvailabilityId(availabilityIdList.get(i));
+					}*/
+					leaveAvailability.setEmpCode(employee.getEmpCode());
+					leaveAvailability.setTypeId(leaveTypes.get(i).getLeaveTypeId());
+					if(employee.getEmpDesignation().equalsIgnoreCase(traineeSoftwareEngineer))
+					{
+						if(leaveTypes.get(i).getLeaveType().equalsIgnoreCase(casualLeave))
+						{
+							leaveAvailability.setAvailability(CASUAL_LEAVE_COUNT);
+							leaveAvailability.setEligibleLeaves(CASUAL_LEAVE_COUNT);
+						}
+						else
+						{
+							leaveAvailability.setAvailability((float)0);
+							leaveAvailability.setEligibleLeaves((float)0);
+						}
+					}
+					else
+					{
+						if(leaveTypes.get(i).getLeaveType().equalsIgnoreCase(earnedLeave))
+						{
+							leaveAvailability.setAvailability(EARNED_LEAVE_COUNT);
+							leaveAvailability.setEligibleLeaves(EARNED_LEAVE_COUNT);
+						}
+						else if(leaveTypes.get(i).getLeaveType().equalsIgnoreCase(educationLeave))
+						{
+							leaveAvailability.setAvailability(EDUCATION_LEAVE_COUNT);
+							leaveAvailability.setEligibleLeaves(EDUCATION_LEAVE_COUNT);
+						}
+						else
+						{
+							leaveAvailability.setAvailability(leaveTypes.get(i).getLeaveCount());
+							leaveAvailability.setEligibleLeaves(leaveTypes.get(i).getLeaveCount());
+						}
+					}
+					leaveAvailability.setLeaveYearFrom(leaveYearFrom);
+					leaveAvailability.setLeaveYearTo(leaveYearTo);
+					leaveAvailability.setLeavesTaken((float)0);
+					leaveAdminDAO.addAvailability(leaveAvailability);
+				}
+			}
+		leaveAdminDAO.addNewEmployee(employee);
+	}
+
+	public List<Employee> searchForEmployee(int code) {
+		List<Employee> empCode = leaveAdminDAO.searchForEmployee(code);
+		return empCode;
+	}
+
+
+	public List<Employee> searchEmpDetails(String employeeName,
+			String employeeDesignation, String employeeRole) {
+		List<Employee> empDetails = leaveAdminDAO.searchEmpDetails(employeeName, employeeDesignation, employeeRole);
+		return empDetails;
+	}
+
+	public List<EmployeeDesignation> getDesignationDetails() {
+		List<EmployeeDesignation> desigDetails = leaveAdminDAO.getDesignationDetails();
+		return desigDetails;
+	}
+
+	public void markHoliday(Date selectedDate, String holidayRemark) throws ParseException 
+	{
+		Holidays holidays = new Holidays();
+		List<Holidays> holidayDetails = leaveAdminDAO.getHolidayDetailsByDate(selectedDate);
+		if(!holidayDetails.isEmpty())
+		{
+			holidays.setHolidayId(holidayDetails.get(0).getHolidayId());
+		}
+		SimpleDateFormat sf = new SimpleDateFormat("MM/dd/yyyy");
+		selectedDate= sf.parse(sf.format(selectedDate));
+		holidays.setHolidayDate(selectedDate);
+		holidays.setHolidayDescription(holidayRemark);
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(selectedDate);
+		int year = cal.get(Calendar.YEAR);
+		holidays.setHolidayYear(year);
+		leaveAdminDAO.markHoliday(holidays);
+	}
+
+
+	
+
+	public List<LeaveAvailability> getLeaveAvailability(int empCode) {
+		List<LeaveAvailability> availableLeaveDetails = leaveAdminDAO.getLeaveAvailability(empCode);
+		return availableLeaveDetails;
+	}
+
+	public void cancelLeaveByAdmin(int leaveId, List<Employee> emplDetails) throws ParseException{
+		
+		float prevYearLeaveDays = 0;
+		float currentYearLeaveDays = 0;
+		float nextYearLeaveDays = 0;
+		Date[] currentLeaveDuration = LTSUtil.getCurrentLeaveYear(emplDetails.get(0));
+		Date[] prevLeaveDuration = LTSUtil.getPreviousLeaveYear(currentLeaveDuration[0], emplDetails.get(0));
+		Date[] nextLeaveDuration = LTSUtil.getNextLeaveYear(currentLeaveDuration[1]);
+		List<EmployeeLeaves> leaveList = leaveAdminDAO.getLeaveDetails(leaveId);
+		if(leaveList.get(0).getFromDate().before(currentLeaveDuration[0]) && leaveList.get(0).getToDate().before(currentLeaveDuration[0]))
+		{
+			leaveAdminDAO.cancelLeaveByAdmin(leaveId, prevLeaveDuration[0], prevLeaveDuration[1]);
+		}
+		else if(leaveList.get(0).getFromDate().before(currentLeaveDuration[0]) && ((leaveList.get(0).getToDate().compareTo(currentLeaveDuration[0]) == 1) || (leaveList.get(0).getToDate().compareTo(currentLeaveDuration[0]) == 0)))
+		{
+			 prevYearLeaveDays = (LTSUtil.getWorkingDaysBetweenDates(leaveList.get(0).getFromDate(), prevLeaveDuration[1])) + 1;
+			 currentYearLeaveDays = Float.valueOf(leaveList.get(0).getNoOfDays()) - prevYearLeaveDays;
+			 leaveAdminDAO.cancelCombinedLeave(leaveId, prevLeaveDuration, currentLeaveDuration, prevYearLeaveDays, currentYearLeaveDays);
+		}
+		else if(leaveList.get(0).getFromDate().after(currentLeaveDuration[1]) && leaveList.get(0).getToDate().after(currentLeaveDuration[1]))
+		{
+			leaveAdminDAO.cancelLeaveByAdmin(leaveId, nextLeaveDuration[0], nextLeaveDuration[1]);
+		}
+		else if((leaveList.get(0).getFromDate().compareTo(currentLeaveDuration[1]) == -1 || leaveList.get(0).getFromDate().compareTo(currentLeaveDuration[1]) == 0) && leaveList.get(0).getToDate().after(currentLeaveDuration[1]))
+		{
+			currentYearLeaveDays = (LTSUtil.getWorkingDaysBetweenDates(leaveList.get(0).getFromDate(), currentLeaveDuration[1])) + 1;
+			nextYearLeaveDays = Float.valueOf(leaveList.get(0).getNoOfDays()) - currentYearLeaveDays;
+			leaveAdminDAO.cancelCombinedLeave(leaveId, nextLeaveDuration, currentLeaveDuration, nextYearLeaveDays, currentYearLeaveDays);
+		}
+		else
+		{
+			leaveAdminDAO.cancelLeaveByAdmin(leaveId, currentLeaveDuration[0], currentLeaveDuration[1]);
+		}
+	}
+
+	public List<EmployeeLeaves> getEmployeeDetails(int leaveId) {
+		List<EmployeeLeaves> leaveDetails = leaveAdminDAO.getLeaveDetails(leaveId);
+		return leaveDetails;
+	}
+}

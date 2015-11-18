@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/lts/!svn/ver/726/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/dao/hibernate
+END
+LeaveHibernateDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 122
+/svn/lts/!svn/ver/706/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/dao/hibernate/LeaveHibernateDAO.java
+END
+SchedulerHibernateDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 126
+/svn/lts/!svn/ver/726/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/dao/hibernate/SchedulerHibernateDAO.java
+END
+LeaveAdminHibernateDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 127
+/svn/lts/!svn/ver/706/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/dao/hibernate/LeaveAdminHibernateDAO.java
+END
+LeaveRecommendHibernateDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 131
+/svn/lts/!svn/ver/706/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/dao/hibernate/LeaveRecommendHibernateDAO.java
+END
+LoginHibernateDAO.java
+K 25
+svn:wc:ra_dav:version-url
+V 122
+/svn/lts/!svn/ver/130/trunk/source/LeaveTrackingSystem/src/main/java/com/experion/lts/dao/hibernate/LoginHibernateDAO.java
+END

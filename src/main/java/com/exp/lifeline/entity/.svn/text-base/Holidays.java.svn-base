@@ -1,0 +1,80 @@
+package com.experion.lts.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "LTS_HOLIDAYS")
+public class Holidays implements Serializable
+{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO, generator = "LTS_HOLIDAYS")
+	@SequenceGenerator(name = "LTS_HOLIDAYS", sequenceName = "LTS_HLDY_ID_SEQ")
+	@Column(name = "LTS_HLDY_ID")
+	private Long holidayId;
+	
+	@Column(name = "LTS_HLDY_DT")
+	private Date holidayDate;
+	
+	@Column(name = "LTS_HLDY_DESC")
+	private String holidayDescription;
+	
+	@Column(name = "LTS_HLDY_YEAR")
+	private Integer holidayYear;
+	
+	@Column(name = "LTS_HLDY_LOCATION_CODE")
+	private Integer locationCode;
+
+	public Long getHolidayId() {
+		return holidayId;
+	}
+
+	public void setHolidayId(Long holidayId) {
+		this.holidayId = holidayId;
+	}
+
+	public Date getHolidayDate() {
+		return holidayDate;
+	}
+
+	public void setHolidayDate(Date holidayDate) {
+		this.holidayDate = holidayDate;
+	}
+
+	public String getHolidayDescription() {
+		return holidayDescription;
+	}
+
+	public void setHolidayDescription(String holidayDescription) {
+		this.holidayDescription = holidayDescription;
+	}
+
+	public Integer getHolidayYear() {
+		return holidayYear;
+	}
+
+	public void setHolidayYear(Integer holidayYear) {
+		this.holidayYear = holidayYear;
+	}
+
+	public Integer getLocationCode() {
+		return locationCode;
+	}
+
+	public void setLocationCode(Integer locationCode) {
+		this.locationCode = locationCode;
+	}
+}

@@ -1,0 +1,71 @@
+package com.experion.lts.dao;
+
+import java.util.Date;
+import java.util.List;
+
+import com.experion.lts.entity.Employee;
+import com.experion.lts.entity.EmployeeDesignation;
+import com.experion.lts.entity.EmployeeLeaves;
+import com.experion.lts.entity.Holidays;
+import com.experion.lts.entity.LeaveAvailability;
+import com.experion.lts.entity.LeaveTypes;
+
+public interface LeaveAdminDAO 
+{
+	public List<Employee> getAllEmpDetails();
+	
+	public String getSelectedEmpName(int empCode);
+	
+	public void resetLeaves(int empCode, int[] leaveTypes, float[] leaveCounts, String[] leaveDuration);
+	
+	public List<Employee> searchEmployee(String empName);
+	
+	public List<Employee> showEmployeeDetails();
+	
+	public List<Employee> searchEmployeeByCode(int empCode);
+	
+	public Date getJoiningDate(int empCode);
+	
+	public List<LeaveAvailability> getAllAvailabileLeave(int empCode, Date fromDate, Date toDate);
+	
+	public String getLeaveTypeName(int typeId);
+
+	public List<Employee> searchEmployeeDetails(String leaveYear,
+			String designation);
+
+	public List<EmployeeLeaves> getLeaveDetails(int empCode, String empName,
+			String statusType, String leaveType);
+	
+	public List<EmployeeLeaves> getAppliedLeaves(int empCode);
+
+	public void addNewEmployee(Employee employee);
+
+	public List<Employee> searchForEmployee(int code);
+
+	public List<Employee> searchEmpDetails(String employeeName,
+			String employeeDesignation, String employeeRole);
+
+	public List<EmployeeDesignation> getDesignationDetails();
+	
+	public void markHoliday(Holidays holidays);
+	
+	public List<Holidays> getHolidayDetails(int year);
+	
+	public List<Holidays> getHolidayDetailsByDate(Date selectedDate);
+
+	public List<LeaveTypes> getLeaveTypes(String empGender);
+
+	public void addAvailability(LeaveAvailability leaveAvailability);
+
+	public List<Integer> getAvailabilityIdList(int empCode);
+
+	public void cancelLeaveByAdmin(int leaveId, Date leaveYearFrom, Date leaveYearTo);
+
+	public List<LeaveAvailability> getLeaveAvailability(int empCode);
+
+	public List<EmployeeLeaves> getLeaveDetails(int leaveId);
+	
+	public void cancelCombinedLeave(int leaveId, Date[] prevLeaveDuration, Date[] currentleaveDuration, float prevYearLeaveDays, float currentYearLeaveDays);
+
+
+}

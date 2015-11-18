@@ -1,0 +1,58 @@
+package com.experion.lts.dao;
+
+import java.util.Date;
+import java.util.List;
+
+import com.experion.lts.entity.Employee;
+import com.experion.lts.entity.EmployeeLeaves;
+import com.experion.lts.entity.LeaveTypes;
+
+public interface LeaveRecommendDAO 
+{
+	public void saveRecommendStatus(int leaveId);
+	
+	public void saveApprovalStatus(int leaveId, Date leaveYearFrom, Date leaveYearTo);
+	
+	public List<EmployeeLeaves> getInboxDetails(int empCode);
+	
+	public String getEmployeeRole(int empCode);
+	
+	public List<Employee> getEmployeeDetails();
+	
+	public List<Employee> getEmployeeDetails(int empCode);
+	
+	public void saveRejectReasonOfRecommender(int leaveId, String rejectReason, Date leaveYearFrom, Date leaveYearTo);
+	
+	public void saveRejectReasonOfManager(int leaveId, String rejectReason, Date leaveYearFrom, Date leaveYearTo);
+	
+	public String getSenderEmail(int empCode);
+	
+	public String getReceiverEmail(int leaveId);
+	
+	public String getSenderName(int empCode);
+	
+	public String getReceiverName(int leaveId);
+	
+	public List<Employee> getRecDetails(int leaveId);
+	
+	public List<EmployeeLeaves> getLeaveDetails(int empCode, String empName, String statusType, String leaveType, String role);
+	
+	public List<EmployeeLeaves> getRespondedLeaveDetails(int empCode, String empName, String statusType, String leaveType, String role);
+
+	public String getRecEmail(int leaveId);
+
+	public String getRecName(int leaveId);
+
+	public String getStatusType(int leaveId);
+
+	public List<Employee> getMgrDetails(int leaveId);
+
+	public List<LeaveTypes> getLeaveType(int leaveId);
+
+	public List<EmployeeLeaves> getDetails(int leaveId);
+	
+	public void processRejectReasonOfRecommender(int leaveId, String rejectReason, Date[] currentleaveDuration, Date[] prevLeaveDuration, float prevYearLeaveDays, float currentYearLeaveDays);
+	
+	public int processRejectReasonOfManager(int leaveId, String rejectReason, Date[] currentleaveDuration, Date[] prevLeaveDuration, float prevYearLeaveDays, float currentYearLeaveDays);
+
+}

@@ -1,0 +1,147 @@
+package com.experion.lts.service.impl;
+
+import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.context.MessageSource;
+
+import com.experion.lts.dao.LeaveDAO;
+import com.experion.lts.dao.LeaveRecommendDAO;
+import com.experion.lts.entity.Employee;
+import com.experion.lts.entity.EmployeeLeaves;
+import com.experion.lts.service.LeaveRecommendService;
+import com.experion.lts.util.LTSUtil;
+
+public class LeaveRecommendServiceImpl implements LeaveRecommendService
+{
+	private static final int COMP_OFF_CODE = 9; 
+	private LeaveRecommendDAO leaveRecommendDAO;
+	private LeaveDAO leaveDAO;
+	
+	public LeaveDAO getLeaveDAO() {
+		return leaveDAO;
+	}
+	public void setLeaveDAO(LeaveDAO leaveDAO) {
+		this.leaveDAO = leaveDAO;
+	}
+
+	private MessageSource messageSource;
+
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+	public LeaveRecommendDAO getLeaveRecommendDAO() {
+		return leaveRecommendDAO;
+	}
+	public void setLeaveRecommendDAO(LeaveRecommendDAO leaveRecommendDAO) {
+		this.leaveRecommendDAO = leaveRecommendDAO;
+	}
+	public void sendRecommend(int leaveId, int empCode)
+	{
+		leaveRecommendDAO.saveRecommendStatus(leaveId);
+	}
+	public void sendApproval(int leaveId) throws ParseException
+	{
+		List<EmployeeLeaves> leaveList = leaveRecommendDAO.getDetails(leaveId);
+		Employee emplDetails = leaveRecommendDAO.getEmployeeDetails(leaveList.get(0).getEmpCode()).get(0);
+		Date[] leaveDurationArray = LTSUtil.getCurrentLeaveYear(emplDetails);
+		leaveRecommendDAO.saveApprovalStatus(leaveId, leaveDurationArray[0], leaveDurationArray[1]);
+	}
+	
+	public List<EmployeeLeaves> showInbox(int empCode)
+	{
+		return leaveRecommendDAO.getInboxDetails(empCode);
+	}
+	public String checkEmployeeRole(int empCode)
+	{
+		return leaveRecommendDAO.getEmployeeRole(empCode);
+	}
+	public List<Employee> getEmployeeDetails()
+	{
+		return leaveRecommendDAO.getEmployeeDetails();
+	}
+	
+	public void sendRejectReasonByRecommender(int leaveId, String rejectReason, int empCode) throws ParseException
+	{
+		float prevYearLeaveDays = 0;
+		float currentYearLeaveDays = 0; 
+		float nextYearLeaveDays = 0; 
+		List<EmployeeLeaves> leaveList = leaveRecommendDAO.getDetails(leaveId);
+		Employee emplDetails = leaveRecommendDAO.getEmployeeDetails(leaveList.get(0).getEmpCode()).get(0);
+		Date[] currentLeaveDuration = LTSUtil.getCurrentLeaveYear(emplDetails);
+		Date[] prevLeaveDuration = LTSUtil.getPreviousLeaveYear(currentLeaveDuration[0], emplDetails);
+		Date[] nextLeaveDuration = LTSUtil.getNextLeaveYear(currentLeaveDuration[1]);
+		if(leaveList.get(0).getFromDate().before(currentLeaveDuration[0]) && leaveList.get(0).getToDate().before(currentLeaveDuration[0]) && leaveList.get(0).getLeaveType() != COMP_OFF_CODE)
+		{
+			leaveRecommendDAO.saveRejectReasonOfRecommender(leaveId, rejectReason, prevLeaveDuration[0], prevLeaveDuration[1]);
+		}
+		else if(leaveList.get(0).getFromDate().before(currentLeaveDuration[0]) && ((leaveList.get(0).getToDate().compareTo(currentLeaveDuration[0]) == 1) || (leaveList.get(0).getToDate().compareTo(currentLeaveDuration[0]) == 0)) && leaveList.get(0).getLeaveType() != COMP_OFF_CODE)
+		{
+			prevYearLeaveDays = (LTSUtil.getWorkingDaysBetweenDates(leaveList.get(0).getFromDate(), prevLeaveDuration[1])) + 1;
+			currentYearLeaveDays = Float.valueOf(leaveList.get(0).getNoOfDays()) - prevYearLeaveDays;
+			leaveRecommendDAO.processRejectReasonOfRecommender(leaveId, rejectReason, currentLeaveDuration, prevLeaveDuration, prevYearLeaveDays, currentYearLeaveDays);
+		}
+		else if(leaveList.get(0).getFromDate().after(currentLeaveDuration[1]) && leaveList.get(0).getToDate().after(currentLeaveDuration[1]) && leaveList.get(0).getLeaveType() != COMP_OFF_CODE)
+		{
+			leaveRecommendDAO.saveRejectReasonOfRecommender(leaveId, rejectReason, nextLeaveDuration[0], nextLeaveDuration[1]);
+		}
+		else if((leaveList.get(0).getFromDate().compareTo(currentLeaveDuration[1]) == -1 || leaveList.get(0).getFromDate().compareTo(currentLeaveDuration[1]) == 0) && leaveList.get(0).getToDate().after(currentLeaveDuration[1]) && leaveList.get(0).getLeaveType() != COMP_OFF_CODE)
+		{
+			currentYearLeaveDays = (LTSUtil.getWorkingDaysBetweenDates(leaveList.get(0).getFromDate(), currentLeaveDuration[1])) + 1;
+			nextYearLeaveDays = Float.valueOf(leaveList.get(0).getNoOfDays()) - currentYearLeaveDays;
+			leaveRecommendDAO.processRejectReasonOfRecommender(leaveId, rejectReason, currentLeaveDuration, nextLeaveDuration, nextYearLeaveDays, currentYearLeaveDays);
+		}
+		else
+		{
+			leaveRecommendDAO.saveRejectReasonOfRecommender(leaveId, rejectReason, currentLeaveDuration[0], currentLeaveDuration[1]);
+		}
+	}
+	public void sendRejectReasonByManager(int leaveId, String rejectReason, int empCode) throws ParseException
+	{
+		float prevYearLeaveDays = 0;
+		float currentYearLeaveDays = 0; 
+		float nextYearLeaveDays = 0; 
+		List<EmployeeLeaves> leaveList = leaveRecommendDAO.getDetails(leaveId);
+		Employee emplDetails = leaveRecommendDAO.getEmployeeDetails(leaveList.get(0).getEmpCode()).get(0);
+		Date[] currentLeaveDuration = LTSUtil.getCurrentLeaveYear(emplDetails);
+		Date[] prevLeaveDuration = LTSUtil.getPreviousLeaveYear(currentLeaveDuration[0], emplDetails);
+		Date[] nextLeaveDuration = LTSUtil.getNextLeaveYear(currentLeaveDuration[1]);
+		if(leaveList.get(0).getFromDate().before(currentLeaveDuration[0]) && leaveList.get(0).getToDate().before(currentLeaveDuration[0]) && leaveList.get(0).getLeaveType() != COMP_OFF_CODE)
+		{
+			leaveRecommendDAO.saveRejectReasonOfManager(leaveId, rejectReason, prevLeaveDuration[0], prevLeaveDuration[1]);
+		}
+		else if(leaveList.get(0).getFromDate().before(currentLeaveDuration[0]) && ((leaveList.get(0).getToDate().compareTo(currentLeaveDuration[0]) == 1) || (leaveList.get(0).getToDate().compareTo(currentLeaveDuration[0]) == 0)) && leaveList.get(0).getLeaveType() != COMP_OFF_CODE)
+		{
+			prevYearLeaveDays = (LTSUtil.getWorkingDaysBetweenDates(leaveList.get(0).getFromDate(), prevLeaveDuration[1])) + 1;
+			currentYearLeaveDays = Float.valueOf(leaveList.get(0).getNoOfDays()) - prevYearLeaveDays;
+			leaveRecommendDAO.processRejectReasonOfManager(leaveId, rejectReason, currentLeaveDuration, prevLeaveDuration, prevYearLeaveDays, currentYearLeaveDays);
+		}
+		else if(leaveList.get(0).getFromDate().after(currentLeaveDuration[1]) && leaveList.get(0).getToDate().after(currentLeaveDuration[1]) && leaveList.get(0).getLeaveType() != COMP_OFF_CODE)
+		{
+			 leaveRecommendDAO.saveRejectReasonOfManager(leaveId, rejectReason, nextLeaveDuration[0], nextLeaveDuration[1]);
+		}
+		else if((leaveList.get(0).getFromDate().compareTo(currentLeaveDuration[1]) == -1 || leaveList.get(0).getFromDate().compareTo(currentLeaveDuration[1]) == 0) && leaveList.get(0).getToDate().after(currentLeaveDuration[1]) && leaveList.get(0).getLeaveType() != COMP_OFF_CODE)
+		{
+			currentYearLeaveDays = (LTSUtil.getWorkingDaysBetweenDates(leaveList.get(0).getFromDate(), currentLeaveDuration[1])) + 1;
+			nextYearLeaveDays = Float.valueOf(leaveList.get(0).getNoOfDays()) - currentYearLeaveDays;
+			leaveRecommendDAO.processRejectReasonOfManager(leaveId, rejectReason, currentLeaveDuration, nextLeaveDuration, nextYearLeaveDays, currentYearLeaveDays);
+		}
+		else
+		{
+			 leaveRecommendDAO.saveRejectReasonOfManager(leaveId, rejectReason, currentLeaveDuration[0], currentLeaveDuration[1]);
+		}
+	}
+	public List<EmployeeLeaves> getLeaveDetails(int empCode, String empName, String statusType, String leaveType, String role)
+	{
+		return leaveRecommendDAO.getLeaveDetails(empCode, empName, statusType, leaveType, role);
+	}
+	
+	public List<EmployeeLeaves> getRespondedLeaveDetails(int empCode, String empName, String statusType, String leaveType, String role)
+	{
+		return leaveRecommendDAO.getRespondedLeaveDetails(empCode, empName, statusType, leaveType, role);
+	}
+}

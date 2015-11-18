@@ -1,0 +1,41 @@
+package com.experion.lts.entity;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+
+
+@Entity
+@Table(name = "LTS_EMP_DESIGNATION")
+public class EmployeeDesignation {
+	
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO, generator = "LTS_EMP_DESIGNATION")
+	@SequenceGenerator(name = "LTS_EMP_DESIGNATION", sequenceName = "LTS_DESIG_ID_SEQ")
+	@Column(name = "EMP_DESIG_ID")
+	private Integer designationId;
+	
+	@Column(name = "EMP_DESIG_DESC")
+	private String designationDesc;
+	
+	
+	public Integer getDesignationId() {
+		return designationId;
+	}
+	public void setDesignationId(Integer designationId) {
+		this.designationId = designationId;
+	}
+	public String getDesignationDesc() {
+		return designationDesc;
+	}
+	public void setDesignationDesc(String designationDesc) {
+		this.designationDesc = designationDesc;
+	}
+	
+
+}

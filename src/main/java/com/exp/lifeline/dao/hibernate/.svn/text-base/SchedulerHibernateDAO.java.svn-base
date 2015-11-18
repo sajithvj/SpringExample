@@ -1,0 +1,407 @@
+package com.experion.lts.dao.hibernate;
+
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+import org.hibernate.HibernateException;
+import org.hibernate.SQLQuery;
+import org.hibernate.Session;
+import org.springframework.context.MessageSource;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+
+import com.experion.lts.dao.SchedulerDAO;
+import com.experion.lts.entity.Employee;
+import com.experion.lts.entity.LeaveAvailability;
+import com.experion.lts.entity.LeaveTypes;
+import com.experion.lts.util.LTSUtil;
+import com.experion.lts.view.EmailView;
+
+public class SchedulerHibernateDAO extends HibernateDaoSupport implements SchedulerDAO 
+{
+	private static final String TRAINEE_DESIG = "trainee";
+	private static final float MAX_EARN_LEAVE = 15;
+	private static final int EARN_LEAVE_CODE = 3;
+	private static final float EARN_LEAVE_COUNT = 4;
+	private MessageSource messageSource;
+
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Employee> getEmployeeDetails()
+	{
+		try
+		{
+			System.out.println("inside getEmployeeDetails");
+			return getHibernateTemplate().find("from Employee");
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public void resetAvailability(Employee employeeDetails, Date leaveYearFrom, Date leaveYearTo, int yearDifference)
+	{
+		try
+		{
+			System.out.println("inside reset availability");
+			List<LeaveTypes> leaveDetails;
+			LeaveAvailability leaveAvailability;
+			SimpleDateFormat sf = new SimpleDateFormat("MM/dd/yyyy");
+			String maternityLeave = messageSource.getMessage("lts.leavetype.maternityleave", null, Locale.getDefault());
+			String paternityLeave = messageSource.getMessage("lts.leavetype.paternityleave", null, Locale.getDefault());
+			String compOff = messageSource.getMessage("lts.leavetype.compoffleave", null, Locale.getDefault());
+			String earnedLeave =  messageSource.getMessage("lts.leavetype.earnedleave", null, Locale.getDefault());
+			String educationLeave = messageSource.getMessage("lts.leavetype.educationleave", null, Locale.getDefault());
+			String compOffLeave = messageSource.getMessage("lts.leavetype.compleave", null, Locale.getDefault());
+			String lossOfPay = messageSource.getMessage("lts.leavetype.lop", null, Locale.getDefault());
+			String availResetStatus = messageSource.getMessage("lts.availabiity.reset.status", null, Locale.getDefault());
+			/*Date[] oldLeaveYear = LTSUtil.getPreviousLeaveYear(leaveYearFrom, employeeDetails);
+			Date oldLeaveYearFrom = oldLeaveYear[0];
+			Date oldLeaveYearTo = oldLeaveYear[1];*/
+			Calendar dateNow = Calendar.getInstance();
+			dateNow.add(Calendar.MONTH, 1);
+			Date currentDatePlus1M = sf.parse(sf.format(dateNow.getTime()));
+			int yrDifference = LTSUtil.getYearDifference(employeeDetails.getStandardDate(), currentDatePlus1M);
+			Calendar calDate = Calendar.getInstance();
+			calDate.setTime(leaveYearFrom);
+			calDate.add(Calendar.DATE, -1);
+			Date oldLeaveYearTo = sf.parse(sf.format(calDate.getTime()));
+			if((employeeDetails.getResetStatus().equalsIgnoreCase(availResetStatus) && yrDifference == 0) || (!employeeDetails.getResetStatus().equalsIgnoreCase(availResetStatus) && employeeDetails.getEmpDesignation().toLowerCase().contains(TRAINEE_DESIG)))
+			{
+				calDate.add(Calendar.MONTH, -(employeeDetails.getTrainingPeriod()));
+			}
+			else
+			{
+				calDate.add(Calendar.YEAR, -1);
+			}
+			calDate.add(Calendar.DATE, 1);
+			Date oldLeaveYearFrom = sf.parse(sf.format(calDate.getTime()));
+			if(employeeDetails.getEmpGender().toLowerCase().equals("m"))
+			{
+				leaveDetails = getHibernateTemplate().find("from LeaveTypes where leaveType != ? and leaveType != ? and leaveType != ?", maternityLeave, compOff, lossOfPay);
+			}
+			else
+			{
+				leaveDetails = getHibernateTemplate().find("from LeaveTypes where leaveType != ? and leaveType != ? and leaveType != ?", paternityLeave, compOff, lossOfPay);
+			}
+			
+			for(int i=0;i<leaveDetails.size();i++)
+			{
+				leaveAvailability = new LeaveAvailability();
+				if(leaveDetails.get(i).getLeaveType().equals(earnedLeave))
+				{
+					List<LeaveAvailability> earnLeaveCount = getHibernateTemplate().find("from LeaveAvailability where empCode = ? and typeId = ? and leaveYearFrom = ? and leaveYearTo = ?", employeeDetails.getEmpCode(), leaveDetails.get(i).getLeaveTypeId(), oldLeaveYearFrom, oldLeaveYearTo);
+					if(!earnLeaveCount.isEmpty())
+					{
+						/*if((earnLeaveCount.get(0).getAvailability() + EARN_LEAVE_COUNT) > MAX_EARN_LEAVE)
+						{
+							leaveAvailability.setAvailability(MAX_EARN_LEAVE);
+							leaveAvailability.setEligibleLeaves(MAX_EARN_LEAVE);
+						}
+						else if(employeeDetails.getEmpDesignation().toLowerCase().contains(TRAINEE_DESIG) && !employeeDetails.getResetStatus().equalsIgnoreCase(availResetStatus))
+						{
+							leaveAvailability.setAvailability(earnLeaveCount.get(0).getAvailability());
+							leaveAvailability.setEligibleLeaves(earnLeaveCount.get(0).getAvailability());
+						}
+						else
+						{
+							leaveAvailability.setAvailability((earnLeaveCount.get(0).getAvailability() + EARN_LEAVE_COUNT));
+							leaveAvailability.setEligibleLeaves((earnLeaveCount.get(0).getAvailability() + EARN_LEAVE_COUNT));
+						}*/
+						leaveAvailability.setAvailability(EARN_LEAVE_COUNT);
+						leaveAvailability.setEligibleLeaves(EARN_LEAVE_COUNT);
+					}
+					else
+					{
+						leaveAvailability.setAvailability(leaveDetails.get(i).getLeaveCount());
+						leaveAvailability.setEligibleLeaves(leaveDetails.get(i).getLeaveCount());
+					}
+				}
+				else if(leaveDetails.get(i).getLeaveType().equalsIgnoreCase(educationLeave))
+				{
+					List<LeaveAvailability> eduLeaveCount = getHibernateTemplate().find("from LeaveAvailability where empCode = ? and typeId = ? and leaveYearFrom = ? and leaveYearTo = ?", employeeDetails.getEmpCode(), leaveDetails.get(i).getLeaveTypeId(), oldLeaveYearFrom, oldLeaveYearTo);
+					if(yrDifference == 2)
+					{
+						leaveAvailability.setAvailability(leaveDetails.get(i).getLeaveCount());
+						leaveAvailability.setEligibleLeaves(leaveDetails.get(i).getLeaveCount());
+					}
+					else if(yrDifference == 4)
+					{
+						leaveAvailability.setAvailability(leaveDetails.get(i).getLeaveCount() + eduLeaveCount.get(0).getAvailability());
+						leaveAvailability.setEligibleLeaves(leaveDetails.get(i).getLeaveCount() + eduLeaveCount.get(0).getAvailability());
+					}
+					else
+					{
+						leaveAvailability.setAvailability(eduLeaveCount.get(0).getAvailability());
+						leaveAvailability.setEligibleLeaves(eduLeaveCount.get(0).getAvailability());
+					}
+					/*if((yearDifference % 2) == 0  && yearDifference <= 4)
+					{
+						leaveAvailability.setAvailability(leaveDetails.get(i).getLeaveCount() + eduLeaveCount.get(0).getAvailability());
+						leaveAvailability.setEligibleLeaves(leaveDetails.get(i).getLeaveCount() + eduLeaveCount.get(0).getAvailability());
+					}
+					else
+					{
+						leaveAvailability.setAvailability(eduLeaveCount.get(0).getAvailability());
+						leaveAvailability.setEligibleLeaves(eduLeaveCount.get(0).getAvailability());
+					}*/
+				}
+				else if(leaveDetails.get(i).getLeaveType().equals(compOffLeave))
+				{
+					List<LeaveAvailability> compOffLeaveCount = getHibernateTemplate().find("from LeaveAvailability where empCode = ? and typeId = ? and leaveYearFrom = ? and leaveYearTo = ?", employeeDetails.getEmpCode(), leaveDetails.get(i).getLeaveTypeId(), oldLeaveYearFrom, oldLeaveYearTo);
+					if(!compOffLeaveCount.isEmpty())
+					{
+						leaveAvailability.setAvailability(compOffLeaveCount.get(0).getAvailability() + leaveDetails.get(i).getLeaveCount());
+						leaveAvailability.setEligibleLeaves(compOffLeaveCount.get(0).getAvailability() + leaveDetails.get(i).getLeaveCount());	
+					}
+					else
+					{
+						leaveAvailability.setAvailability(leaveDetails.get(i).getLeaveCount());
+						leaveAvailability.setEligibleLeaves(leaveDetails.get(i).getLeaveCount());
+					}
+				}
+				else
+				{
+					leaveAvailability.setAvailability(leaveDetails.get(i).getLeaveCount());
+					leaveAvailability.setEligibleLeaves(leaveDetails.get(i).getLeaveCount());
+				}
+				leaveAvailability.setLeavesTaken((float)0);
+				leaveAvailability.setTypeId(leaveDetails.get(i).getLeaveTypeId());
+				leaveAvailability.setEmpCode(employeeDetails.getEmpCode());
+				leaveAvailability.setLeaveYearFrom(leaveYearFrom);
+				leaveAvailability.setLeaveYearTo(leaveYearTo);
+				getHibernateTemplate().save(leaveAvailability);
+			}
+			if(employeeDetails.getEmpDesignation().toLowerCase().contains(TRAINEE_DESIG) && !employeeDetails.getResetStatus().equalsIgnoreCase(availResetStatus) )
+			{
+				getHibernateTemplate().bulkUpdate("update Employee set standardDate = ?, resetStatus = ? where empCode = ? ", leaveYearFrom, availResetStatus, employeeDetails.getEmpCode());
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		
+	}
+
+	public List<EmailView> getLeaveDetails()
+	{
+		try
+		{
+			SimpleDateFormat sf = new SimpleDateFormat("MM/dd/yyyy");
+			SimpleDateFormat sf1 = new SimpleDateFormat("yyyy-MM-dd");
+			String finalMail = messageSource.getMessage("lts.mail.status.finalmail", null, Locale.getDefault()).toLowerCase();
+			StringBuilder queryString = new StringBuilder("select EMP_LEAVE_ID, EMP_NAME,EMP_EMAIL, EMP_LEAVE_STATUS,EMP_CANCEL_STATUS, EMP_MAIL_STATUS,EMP_NO_OF_DAYS,EMP_FROM_DT,"+
+								 "EMP_TO_DT, EMP_REC_REJECT_REASON, EMP_MGR_REJECT_REASON, ( select EMP_NAME from LTS_EMP_DETAILS where " +
+								 "EMP_CODE = LTS_EMP_LEAVES.EMP_RECOMMENDER ) as recommender, ( select EMP_EMAIL from LTS_EMP_DETAILS where " +
+								 "EMP_CODE = LTS_EMP_LEAVES.EMP_RECOMMENDER ) as recommender_mail, ( select EMP_NAME from LTS_EMP_DETAILS where " +
+								 "EMP_CODE = LTS_EMP_LEAVES.EMP_MANAGER ) as Manager, ( select EMP_EMAIL from LTS_EMP_DETAILS where " +
+								 "EMP_CODE = LTS_EMP_LEAVES.EMP_MANAGER ) as Manager_mail, LVT_DESC from LTS_EMP_LEAVES, LTS_EMP_DETAILS, " +
+								 "LTS_LEAVE_TYPES where LTS_EMP_LEAVES.emp_code = LTS_EMP_DETAILS.emp_code and LTS_EMP_LEAVES.EMP_LEAVE_TYPE_ID " +
+								 "= LTS_LEAVE_TYPES.LVT_ID and LOWER(EMP_MAIL_STATUS) <> '"+finalMail+"'");
+			List<Object[]> leaveList = executeQuery(queryString);
+			List<EmailView> leaveDetails = new ArrayList<EmailView>();
+			if (leaveList != null && leaveList.size() != 0) {
+				for (Object[] objects : leaveList) {
+					if (objects != null) {
+						EmailView emailView = new EmailView();
+						if (objects[0] != null) {
+							emailView.setLeaveId(Integer.valueOf(objects[0].toString()));
+						}
+						if (objects[1] != null) {
+							emailView.setEmpName(objects[1].toString());
+						}
+						if (objects[2] != null) {
+							emailView.setEmpEmail(objects[2].toString());
+						}
+						if (objects[3] != null) {
+							emailView.setLeaveStatus(objects[3].toString());
+						}
+						if (objects[4] != null) {
+							emailView.setCancelStatus(objects[4].toString());
+						} 
+						if (objects[5] != null) {
+							emailView.setMailStatus(objects[5].toString());
+						}
+						if (objects[6] != null) {
+							emailView.setNoOfDays(Float.valueOf(objects[6].toString()));
+						}
+						if (objects[7] != null) {
+							emailView.setFromDate(sf.parse(sf.format(sf1.parse(objects[7].toString()))));
+						}
+						if (objects[8] != null) {
+							emailView.setToDate(sf.parse(sf.format(sf1.parse(objects[8].toString()))));
+						}
+						if (objects[9] != null) {
+							emailView.setRecRejectReason(objects[9].toString());
+						}
+						if (objects[10] != null) {
+							emailView.setMgrRejectReason(objects[10].toString());
+						}
+						if (objects[11] != null) {
+							emailView.setRecommenderName(objects[11].toString());
+						}
+						if (objects[12] != null) {
+							emailView.setRecEmail(objects[12].toString());
+						}
+						if (objects[13] != null) {
+							emailView.setManagerName(objects[13].toString());
+						}
+						if (objects[14] != null) {
+							emailView.setMgrEmail(objects[14].toString());
+						}
+						if (objects[15] != null) {
+							emailView.setLeaveType(objects[15].toString());
+						}
+						leaveDetails.add(emailView);
+					}
+				}
+			}
+			return leaveDetails;
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<Object[]> executeQuery(final StringBuilder sqlQuery)
+			throws Exception {
+		List<Object[]> list = null;
+		try {
+			list = (List<Object[]>) this.getHibernateTemplate().execute(
+					new HibernateCallback() {
+						public Object doInHibernate(final Session session)
+								throws HibernateException, SQLException {
+							List<Object> list = null;
+							try {
+								//final String queryString = buildQuery(sqlQuery);
+								final SQLQuery query = session
+										.createSQLQuery(sqlQuery.toString());
+								final List objList = query.list();
+								// list = (Object[]) objList.get(0);
+								list = objList;
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+							return list;
+						}
+					});
+		} catch (Exception e) {
+			System.out.println("Something went wrong with id ");
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+		return list;
+	}
+
+	public void updateMailStatus(int leaveId, String mailStatus)
+	{
+		try
+		{
+			getHibernateTemplate().bulkUpdate("update EmployeeLeaves set mailStatus = ? where leaveId = ?", mailStatus, leaveId);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public void updateEarnedLeave(Employee employeeDetails, Date[] leaveYear, int flag)
+	{
+		try
+		{
+			List<LeaveAvailability> earnLeaveCount = getHibernateTemplate().find("from LeaveAvailability where empCode = ? and leaveYearFrom = ? and leaveYearTo = ? and typeId = ?", employeeDetails.getEmpCode(), leaveYear[0], leaveYear[1], EARN_LEAVE_CODE);
+			if(flag == 2)
+			{
+				Date[] prevLeaveDuration = LTSUtil.getPreviousLeaveYear(leaveYear[0], employeeDetails);
+				List<LeaveAvailability> prevEarnLeaveCount = getHibernateTemplate().find("from LeaveAvailability where empCode = ? and leaveYearFrom = ? and leaveYearTo = ? and typeId = ?",employeeDetails.getEmpCode(), prevLeaveDuration[0], prevLeaveDuration[1], EARN_LEAVE_CODE);
+				if((earnLeaveCount.get(0).getEligibleLeaves() + prevEarnLeaveCount.get(0).getAvailability()) > MAX_EARN_LEAVE)
+				{
+					getHibernateTemplate().bulkUpdate("update LeaveAvailability set eligibleLeaves = ?, availability = (? - leavesTaken) where empCode = ? and leaveYearFrom = ? and leaveYearTo = ? and typeId = ?", MAX_EARN_LEAVE, MAX_EARN_LEAVE, employeeDetails.getEmpCode(), leaveYear[0], leaveYear[1], EARN_LEAVE_CODE);
+				}
+				else
+				{
+					getHibernateTemplate().bulkUpdate("update LeaveAvailability set eligibleLeaves = (eligibleLeaves + ?), availability = (availability + ?) where empCode = ? and leaveYearFrom = ? and leaveYearTo = ? and typeId = ?", prevEarnLeaveCount.get(0).getAvailability(), prevEarnLeaveCount.get(0).getAvailability(), employeeDetails.getEmpCode(), leaveYear[0], leaveYear[1], EARN_LEAVE_CODE);
+				}
+			}
+			else
+			{
+				if((earnLeaveCount.get(0).getAvailability() + EARN_LEAVE_COUNT) > MAX_EARN_LEAVE)
+				{
+					getHibernateTemplate().bulkUpdate("update LeaveAvailability set availability = ?, eligibleLeaves = ? where empCode = ? and leaveYearFrom = ? and leaveYearTo = ? and typeId = ?", MAX_EARN_LEAVE, MAX_EARN_LEAVE, employeeDetails.getEmpCode(), leaveYear[0], leaveYear[1], EARN_LEAVE_CODE);
+				}
+				else
+				{
+					getHibernateTemplate().bulkUpdate("update LeaveAvailability set availability = (availability + ?), eligibleLeaves = (eligibleLeaves + ?) where empCode = ? and leaveYearFrom = ? and leaveYearTo = ? and typeId = ?", EARN_LEAVE_COUNT, EARN_LEAVE_COUNT, employeeDetails.getEmpCode(), leaveYear[0], leaveYear[1], EARN_LEAVE_CODE);
+				}
+			}
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public void insertEarnedLeave(Employee empDetails, Date leaveYearFrom, Date leaveYearTo) 
+	{
+		try
+		{
+			Date[] prevLeaveYear = LTSUtil.getPreviousLeaveYear(leaveYearFrom, empDetails);
+			LeaveAvailability leaveAvailability = new LeaveAvailability();
+			List<LeaveAvailability> earnLeaveCount = getHibernateTemplate().find("from LeaveAvailability where empCode = ? and leaveYearFrom = ? and leaveYearTo = ? and typeId = ?", empDetails.getEmpCode(), prevLeaveYear[0], prevLeaveYear[1], EARN_LEAVE_CODE);
+			leaveAvailability.setEmpCode(empDetails.getEmpCode());
+			leaveAvailability.setTypeId(EARN_LEAVE_CODE);
+			leaveAvailability.setLeavesTaken((float)0);
+			leaveAvailability.setLeaveYearFrom(leaveYearFrom);
+			leaveAvailability.setLeaveYearTo(leaveYearTo);
+			if((earnLeaveCount.get(0).getAvailability() + EARN_LEAVE_COUNT) > MAX_EARN_LEAVE)
+			{
+				leaveAvailability.setAvailability(MAX_EARN_LEAVE);
+				leaveAvailability.setEligibleLeaves(MAX_EARN_LEAVE);
+			}
+			else
+			{
+				leaveAvailability.setAvailability(earnLeaveCount.get(0).getAvailability() + EARN_LEAVE_COUNT);
+				leaveAvailability.setEligibleLeaves(earnLeaveCount.get(0).getAvailability() + EARN_LEAVE_COUNT);
+			}
+			getHibernateTemplate().save(leaveAvailability);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		
+	}
+	
+	public void setEarnLeaveCountToZero(Employee empDetails, Date[] prevLeaveYear) 
+	{
+		try
+		{
+			getHibernateTemplate().bulkUpdate("update LeaveAvailability set availability = ? where empCode = ? and typeId = ? and leaveYearFrom = ? and leaveYearTo = ?", (float)0, empDetails.getEmpCode(), EARN_LEAVE_CODE, prevLeaveYear[0], prevLeaveYear[1]);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+}

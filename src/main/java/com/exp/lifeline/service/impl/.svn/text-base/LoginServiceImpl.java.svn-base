@@ -1,0 +1,27 @@
+package com.experion.lts.service.impl;
+
+import java.util.List;
+
+import com.experion.lts.dao.LoginDAO;
+import com.experion.lts.entity.Employee;
+import com.experion.lts.service.LoginService;
+
+public class LoginServiceImpl implements LoginService {
+
+	private LoginDAO loginDAO;
+
+	public LoginDAO getLoginDAO() {
+		return loginDAO;
+	}
+
+	public void setLoginDAO(LoginDAO loginDAO) {
+		this.loginDAO = loginDAO;
+	}
+
+	public List<Employee> searchEmployee(int employeeCode, String password) {
+		List<Employee> empDetails = loginDAO.searchEmployee(employeeCode,
+				password);
+		return empDetails;
+	}
+
+}

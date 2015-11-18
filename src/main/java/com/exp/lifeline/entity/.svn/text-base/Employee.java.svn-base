@@ -1,0 +1,182 @@
+package com.experion.lts.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+
+
+@Entity
+@Table(name = "LTS_EMP_DETAILS")
+public class Employee implements Serializable
+{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO, generator = "LTS_EMP_DETAILS")
+	@SequenceGenerator(name = "LTS_EMP_DETAILS", sequenceName = "LTS_EMP_ID_SEQ")
+	@Column(name = "EMP_ID")
+	private Integer empId;
+	
+	@Column(name = "EMP_CODE")
+	private Integer empCode;
+	
+	@Column(name = "EMP_NAME")
+	private String empName;
+	
+	@Column(name = "EMP_EMAIL")
+	private String empEmail;
+	
+	@Column(name = "EMP_PASSWORD")
+	private String empPassword;
+	
+	@Column(name = "EMP_DESIGNATION")
+	private String empDesignation;
+	
+	@Column(name = "EMP_CONTACT")
+	private String empContact;
+	
+	@Column(name = "EMP_ROLE")
+	private String empRole;
+	
+	@Column(name = "EMP_JOINING_DT")
+	private Date joiningDate;
+
+	@Column(name = "EMP_GENDER")
+	private String empGender;
+	
+	@Column(name = "EMP_STANDARD_DT")
+	private Date standardDate;
+	
+	@Column(name = "EMP_TRAINING_PERIOD")
+	private Integer trainingPeriod;
+	
+	@Column(name = "EMP_RESET_STATUS")
+	private String resetStatus;
+	
+	@Column(name = "EMP_STATUS")
+	private String empStatus;
+	
+	public String getEmpStatus() {
+		return empStatus;
+	}
+
+	public void setEmpStatus(String empStatus) {
+		this.empStatus = empStatus;
+	}
+
+	public String getEmpGender() {
+		return empGender;
+	}
+
+	public void setEmpGender(String empGender) {
+		this.empGender = empGender;
+	}
+
+	public Integer getEmpId() {
+		return empId;
+	}
+
+	public void setEmpId(Integer empId) {
+		this.empId = empId;
+	}
+
+	public Integer getEmpCode() {
+		return empCode;
+	}
+
+	public void setEmpCode(Integer empCode) {
+		this.empCode = empCode;
+	}
+
+	public String getEmpName() {
+		return empName;
+	}
+
+	public void setEmpName(String empName) {
+		this.empName = empName;
+	}
+
+	public String getEmpEmail() {
+		return empEmail;
+	}
+
+	public void setEmpEmail(String empEmail) {
+		this.empEmail = empEmail;
+	}
+
+	public String getEmpPassword() {
+		return empPassword;
+	}
+
+	public void setEmpPassword(String empPassword) {
+		this.empPassword = empPassword;
+	}
+
+	public String getEmpDesignation() {
+		return empDesignation;
+	}
+
+	public void setEmpDesignation(String empDesignation) {
+		this.empDesignation = empDesignation;
+	}
+
+	public String getEmpContact() {
+		return empContact;
+	}
+
+	public void setEmpContact(String empContact) {
+		this.empContact = empContact;
+	}
+
+	public String getEmpRole() {
+		return empRole;
+	}
+
+	public void setEmpRole(String empRole) {
+		this.empRole = empRole;
+	}
+
+	public Date getJoiningDate() {
+		return joiningDate;
+	}
+
+	public void setJoiningDate(Date joiningDate) {
+		this.joiningDate = joiningDate;
+	}
+
+	public Date getStandardDate() {
+		return standardDate;
+	}
+
+	public void setStandardDate(Date standardDate) {
+		this.standardDate = standardDate;
+	}
+
+	public Integer getTrainingPeriod() {
+		return trainingPeriod;
+	}
+
+	public void setTrainingPeriod(Integer trainingPeriod) {
+		this.trainingPeriod = trainingPeriod;
+	}
+
+	public String getResetStatus() {
+		return resetStatus;
+	}
+
+	public void setResetStatus(String resetStatus) {
+		this.resetStatus = resetStatus;
+	}
+}
