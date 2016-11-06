@@ -15,7 +15,7 @@ describe('phoneDetail', function() {
 
     beforeEach(inject(function($componentController, _$httpBackend_, $routeParams) {
       $httpBackend = _$httpBackend_;
-      $httpBackend.expectGET('phones/xyz.json').respond(xyzPhoneData);
+      $httpBackend.expectGET('app/phones/xyz.json').respond(xyzPhoneData);
 
       $routeParams.phoneId = 'xyz';
 
