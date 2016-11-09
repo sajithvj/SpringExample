@@ -1,0 +1,21 @@
+<div class="container-fluid">
+<div class="login-container">
+<form ng-submit="onLogin()" name="form" class="login-form" novalidate>
+<fieldset>
+<legend>Log In</legend>
+<div>
+<label>User Name:</label>
+<input type="text" name="userName" id="userName" placeholder="User Name" ng-model="vm.username" required>
+</div>
+<div>
+<label>Password:</label>
+<input type="password" name="userPassword" id="userPassword" placeholder="password" ng-model="vm.passowrd" required>
+</div>
+</fieldset>
+
+ <button type="submit">Log In</button>
+</form>
+
+</div>
+
+</div>
