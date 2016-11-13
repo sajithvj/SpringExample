@@ -1,19 +1,21 @@
 <div class="container-fluid">
-<div class="login-container">
+<div class="col-md-4 col-md-offset-3" style="background-color:#cccccc">
 <form ng-submit="onLogin()" name="form" class="login-form" novalidate>
-<fieldset>
-<legend>Log In</legend>
-<div>
-<label>User Name:</label>
-<input type="text" name="userName" id="userName" placeholder="User Name" ng-model="vm.username" required>
-</div>
-<div>
-<label>Password:</label>
-<input type="password" name="userPassword" id="userPassword" placeholder="password" ng-model="vm.passowrd" required>
-</div>
-</fieldset>
 
- <button type="submit">Log In</button>
+<h2>Log In</h2>
+<div class ="form-group" ng-class="{ 'has-error': form.username.$dirty && form.username.$error.required }">
+<label for="username">User Name</label>
+<input type="text" name="userName" id="userName" class="form-control" placeholder="User Name" ng-model="vm.username" required ngminlength="6">
+<span ng-show="form.username.$dirty && form.username.$error.required" class="help-block">Username is required</span>
+</div>
+<div class="form-group" ng-class="{ 'has-error': form.password.$dirty && form.password.$error.required }">
+<label for="password">Password</label>
+<input type="password" name="userPassword" id="userPassword" class="form-control" placeholder="Password" ng-model="vm.passowrd" required ngminlength="6">
+</div>
+<div class="form-actions">
+ <button type="submit" class="btn btn-primary">Log In</button>
+ <div>&nbsp;</div>
+ </div>
 </form>
 
 </div>
